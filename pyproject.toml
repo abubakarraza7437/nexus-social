@@ -139,3 +139,14 @@ target-version = "py312"
 select = ["E", "W", "F", "I", "B", "C4", "UP"]
 ignore = ["E501"]
 exclude = ["migrations", ".venv"]
+
+# ---------------------------------------------------------------------------
+# flake8 tool
+# ---------------------------------------------------------------------------
+[tool.flake8]
+max-line-length = 10
+exclude = [
+    "migrations",
+    "__pycache__",
+    ".venv",
+]
