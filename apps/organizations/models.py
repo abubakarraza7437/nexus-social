@@ -11,7 +11,6 @@ Models:
 import uuid
 
 from django.conf import settings
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
 
@@ -36,7 +35,7 @@ class Organization(models.Model):
 
     # Subscription
     plan = models.CharField(max_length=20, choices=Plan.choices, default=Plan.FREE)
-    plan_limits = models.JSONField(default=dict)   # Denormalized snapshot of limits
+    plan_limits = models.JSONField(default=dict)  # Denormalized snapshot of limits
 
     # Billing (Stripe)
     billing_customer_id = models.CharField(max_length=100, blank=True)

@@ -37,10 +37,10 @@ class AuditMiddleware:
 
             log_request_task.apply_async(
                 kwargs={
-                    "user_id":    str(user.id) if user.is_authenticated else None,
-                    "org_id":     str(org.id) if org else None,
-                    "method":     request.method,
-                    "path":       request.path,
+                    "user_id": str(user.id) if user.is_authenticated else None,
+                    "org_id": str(org.id) if org else None,
+                    "method": request.method,
+                    "path": request.path,
                     "status_code": response.status_code,
                     "ip_address": self._get_client_ip(request),
                 },
