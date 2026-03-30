@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ("name", models.CharField(max_length=255)),
                 ("slug", models.SlugField(unique=True)),
                 ("plan", models.CharField(
-                    choices=[("free", "Free"), ("pro", "Pro ($29/mo)"), ("business", "Business ($99/mo)"),
+                    choices=[("free", "Free"), ("pro", "Pro"), ("business", "Business"),
                              ("enterprise", "Enterprise (Custom)")], default="free", max_length=20)),
                 ("plan_limits", models.JSONField(default=dict)),
                 ("billing_customer_id", models.CharField(blank=True, max_length=100)),

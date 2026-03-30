@@ -26,9 +26,14 @@ DEBUG: bool = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS: list[str] = config("ALLOWED_HOSTS", default="", cast=Csv())
 
 # ---------------------------------------------------------------------------
-# Application Definition
+# Application Definition — django-tenants schema-per-tenant architecture
 # ---------------------------------------------------------------------------
-DJANGO_APPS = [
+# SHARED_APPS: tables created only in the public schema (users, orgs, tokens).
+# django_tenants must be first.
+SHARED_APPS = [
+    "django_tenants",
+
+    # Django built-ins (public schema)
     "daphne",                          # Must be before django.contrib.staticfiles
     "django.contrib.admin",
     "django.contrib.auth",
@@ -36,35 +41,30 @@ DJANGO_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.postgres",       # ArrayField, JSONField, full-text search
-]
+    "django.contrib.postgres",
 
-THIRD_PARTY_APPS = [
-    # REST
+    # Third-party (shared)
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "django_filters",
     "corsheaders",
-
-    # Real-time
     "channels",
-
-    # Async tasks
     "django_celery_beat",
     "django_celery_results",
-
-    # Auth security
     "axes",
-
-    # Storage
     "storages",
-]
 
-LOCAL_APPS = [
+    # Local — public-schema models: users, orgs, memberships, tokens
     "apps.auth_core.apps.AuthCoreConfig",
     "apps.organizations.apps.OrganizationsConfig",
+]
+
+# TENANT_APPS: tables replicated into every tenant's private schema.
+TENANT_APPS = [
+    "django.contrib.contenttypes",   # needed inside each schema
+
     "apps.social_accounts.apps.SocialAccountsConfig",
     "apps.content.apps.ContentConfig",
     "apps.scheduler.apps.SchedulerConfig",
@@ -77,7 +77,20 @@ LOCAL_APPS = [
     "apps.audit.apps.AuditConfig",
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+# django-tenants requires the union; deduplicate without losing order.
+INSTALLED_APPS = list(SHARED_APPS) + [
+    app for app in TENANT_APPS if app not in SHARED_APPS
+]
+
+# django-tenants configuration
+TENANT_MODEL = "organizations.Organization"
+TENANT_DOMAIN_MODEL = "organizations.Domain"
+DATABASE_ROUTERS = ["django_tenants.routers.TenantSyncRouter"]
+TENANT_BASE_DOMAIN: str = config("TENANT_BASE_DOMAIN", default="localhost")
+
+# URL conf served when the request resolves to the public schema (admin, auth,
+# OpenAPI docs).  Tenant schemas use ROOT_URLCONF (socialos.urls).
+PUBLIC_SCHEMA_URLCONF = "socialos.urls"
 
 # ---------------------------------------------------------------------------
 # Middleware
@@ -87,6 +100,9 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 #   3. TenantIsolationMiddleware runs last (after request.user is populated).
 # ---------------------------------------------------------------------------
 MIDDLEWARE = [
+    # django-tenants: must be first — sets the DB schema for every request.
+    "django_tenants.middleware.main.TenantMainMiddleware",
+
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",          # Serve static files
     "corsheaders.middleware.CorsMiddleware",               # CORS headers
@@ -97,7 +113,6 @@ MIDDLEWARE = [
     "axes.middleware.AxesMiddleware",                      # Brute-force protection
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "apps.organizations.middleware.TenantIsolationMiddleware",
     "apps.audit.middleware.AuditMiddleware",
 ]
 
@@ -130,7 +145,8 @@ WSGI_APPLICATION = "socialos.wsgi.application"
 # ---------------------------------------------------------------------------
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        # django-tenants requires its own backend wrapper (wraps psycopg2).
+        "ENGINE": "django_tenants.postgresql_backend",
         "NAME": config("DB_NAME", default="socialos"),
         "USER": config("DB_USER", default="socialos"),
         "PASSWORD": config("DB_PASSWORD", default="socialos"),
@@ -369,8 +385,8 @@ CELERY_ENABLE_UTC = True
 # Reliability
 CELERY_TASK_ACKS_LATE = True             # Acknowledge after completion, not on receipt
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
-CELERY_WORKER_PREFETCH_MULTIPLIER = 1    # Fetch one task at a time (fair distribution)
-CELERY_WORKER_MAX_TASKS_PER_CHILD = 500  # Recycle workers to prevent memory leaks
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1       # Fetch one task at a time (fair distribution)
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 500     # Recycle workers to prevent memory leaks
 
 # Timeouts
 CELERY_TASK_TIME_LIMIT = 30 * 60         # 30-minute hard kill

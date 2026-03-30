@@ -17,9 +17,9 @@ class UserFactory(factory.django.DjangoModelFactory):
         skip_postgeneration_save = True
 
     email = factory.Sequence(lambda n: f"user{n}@example.com")
-    full_name = factory.Faker("name")
+    name = factory.Faker("name")
     is_active = True
-    is_email_verified = True
+    is_verified = True
     password = factory.PostGenerationMethodCall("set_password", "TestPass123!")
 
 
@@ -29,6 +29,7 @@ class OrganizationFactory(factory.django.DjangoModelFactory):
 
     name = factory.Faker("company")
     slug = factory.Sequence(lambda n: f"org-{n}")
+    schema_name = factory.Sequence(lambda n: f"org{n}")
     plan = Organization.Plan.FREE
     is_active = True
 
@@ -39,5 +40,5 @@ class OrganizationMemberFactory(factory.django.DjangoModelFactory):
 
     organization = factory.SubFactory(OrganizationFactory)
     user = factory.SubFactory(UserFactory)
-    role = OrganizationMember.Role.EDITOR
+    role = OrganizationMember.Role.MEMBER
     is_active = True

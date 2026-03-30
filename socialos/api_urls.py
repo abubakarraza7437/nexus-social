@@ -10,7 +10,7 @@ urlpatterns = [
     path("auth/", include("apps.auth_core.urls", namespace="auth")),
 
     # Organization management
-    path("organizations/", include("apps.organizations.urls", namespace="organizations")),
+    path("orgs/", include("apps.organizations.urls", namespace="organizations")),
 
     # Connected social accounts (connect, disconnect, token refresh)
     path("social-accounts/", include("apps.social_accounts.urls", namespace="social_accounts")),

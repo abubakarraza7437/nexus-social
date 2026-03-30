@@ -1,7 +1,6 @@
 """
 Root conftest — pytest configuration for the entire test suite.
 """
-
 import pytest
 from django.conf import settings
 
