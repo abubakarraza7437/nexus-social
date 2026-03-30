@@ -31,19 +31,18 @@ class OrgPlanThrottle(SimpleRateThrottle):
     }
 
     def get_rate(self) -> str | None:
-        """Determine the rate limit from the org's plan."""
-        request = self.request  # type: ignore[attr-defined]
-        org = getattr(request, "org", None)
-        plan = getattr(org, "plan", "free") if org else "free"
-        return self.PLAN_RATES.get(plan, "100/day")
+        """Return a default rate; the real per-plan rate is applied in allow_request."""
+        return self.PLAN_RATES["free"]
 
     def allow_request(self, request, view) -> bool:
         """Short-circuit for enterprise plans — no throttling."""
-        self.request = request
         org = getattr(request, "org", None)
         plan = getattr(org, "plan", "free") if org else "free"
         if plan == "enterprise":
             return True
+        # Override the rate for this request before delegating to parent
+        self.rate = self.PLAN_RATES.get(plan, self.PLAN_RATES["free"])
+        self.num_requests, self.duration = self.parse_rate(self.rate)
         return super().allow_request(request, view)
 
     def get_cache_key(self, request, view) -> str | None:
