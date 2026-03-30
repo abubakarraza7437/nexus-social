@@ -11,6 +11,7 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from django.http import HttpResponse
 
 from utils.health import HealthView, ReadinessView
 
@@ -47,4 +48,5 @@ urlpatterns = [
         SpectacularRedocView.as_view(url_name="schema"),
         name="redoc",
     ),
+    path("", lambda request: HttpResponse("WELCOME TO SOCIALOS!"), name="root"),
 ]
