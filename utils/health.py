@@ -4,7 +4,7 @@ Utils — Health & Readiness Check Views
 Used by Kubernetes liveness and readiness probes.
 
 GET /health/   → liveness  — returns 200 if the process is alive (no DB check)
-GET /ready/    → readiness — returns 200 only when DB, Redis, and Celery are reachable
+GET /ready/    → readiness — returns 200 only when DB, Redis, and Celery
 """
 import logging
 
@@ -34,14 +34,15 @@ class ReadinessView(View):
 
     def get(self, request, *args, **kwargs) -> JsonResponse:
         checks = {
-            "db":     self._check_db(),
-            "redis":  self._check_redis(),
+            "db": self._check_db(),
+            "redis": self._check_redis(),
             "celery": self._check_celery(),
         }
         all_ok = all(checks.values())
         status_code = 200 if all_ok else 503
-        return JsonResponse({"status": "ok" if all_ok else "degraded", "checks": checks},
-                            status=status_code)
+        return JsonResponse(
+            {"status": "ok" if all_ok else "degraded", "checks": checks},
+            status=status_code)
 
     def _check_db(self) -> bool:
         try:

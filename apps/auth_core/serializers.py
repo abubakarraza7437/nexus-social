@@ -3,9 +3,21 @@ Auth Core — Serializers
 ========================
 CustomTokenObtainSerializer: embeds org_id + role in the JWT payload so
 downstream services can enforce RBAC without a DB round-trip.
+
+Additional serializers cover the full auth flow:
+  SignupSerializer, ForgotPasswordSerializer, ResetPasswordSerializer,
+  LogoutSerializer.
 """
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import (
+    validate_password as django_validate_password,
+)
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
+
+User = get_user_model()
 
 
 class CustomTokenObtainSerializer(TokenObtainPairSerializer):
@@ -35,3 +47,64 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
         token["mfa_enabled"] = user.mfa_enabled
 
         return token
+
+
+# ---------------------------------------------------------------------------
+# Signup
+# ---------------------------------------------------------------------------
+
+class SignupSerializer(serializers.Serializer):
+    """Validate registration input before creating a user + organisation."""
+
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=10)
+    name = serializers.CharField(max_length=255)
+
+    def validate_email(self, value: str) -> str:
+        normalized = User.objects.normalize_email(value)
+        if User.objects.filter(email__iexact=normalized).exists():
+            raise serializers.ValidationError(
+                "A user with this email already exists."
+            )
+        return normalized
+
+    def validate_password(self, value: str) -> str:
+        try:
+            django_validate_password(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(list(exc.messages))
+        return value
+
+
+# ---------------------------------------------------------------------------
+# Forgot / Reset password
+# ---------------------------------------------------------------------------
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    """Accept an email address for the password-reset flow."""
+
+    email = serializers.EmailField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    """Validate the reset token + new password."""
+
+    token = serializers.CharField()
+    password = serializers.CharField(write_only=True, min_length=10)
+
+    def validate_password(self, value: str) -> str:
+        try:
+            django_validate_password(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(list(exc.messages))
+        return value
+
+
+# ---------------------------------------------------------------------------
+# Logout
+# ---------------------------------------------------------------------------
+
+class LogoutSerializer(serializers.Serializer):
+    """Accept a refresh token for blacklisting."""
+
+    refresh = serializers.CharField()

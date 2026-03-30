@@ -6,6 +6,7 @@
 
 # Core Django
 Django>=5.0,<6.0
+django-tenants>=3.6,<4.0
 
 # REST Framework
 djangorestframework>=3.15,<4.0
