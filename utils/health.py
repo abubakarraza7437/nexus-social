@@ -34,8 +34,8 @@ class ReadinessView(View):
 
     def get(self, request, *args, **kwargs) -> JsonResponse:
         checks = {
-            "db":     self._check_db(),
-            "redis":  self._check_redis(),
+            "db": self._check_db(),
+            "redis": self._check_redis(),
             "celery": self._check_celery(),
         }
         all_ok = all(checks.values())
