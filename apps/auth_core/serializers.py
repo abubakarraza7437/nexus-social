@@ -4,6 +4,7 @@ Auth Core — Serializers
 CustomTokenObtainSerializer: embeds org_id + role in the JWT payload so
 downstream services can enforce RBAC without a DB round-trip.
 """
+
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
 

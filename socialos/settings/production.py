@@ -7,6 +7,7 @@ SocialOS — Production Settings
 - Strict security headers and HTTPS enforcement.
 - Sentry error tracking enabled.
 """
+
 import sentry_sdk
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -24,7 +25,7 @@ DEBUG = False
 # Security — HTTPS Enforcement
 # ---------------------------------------------------------------------------
 SECURE_SSL_REDIRECT = True
-SECURE_HSTS_SECONDS = 31_536_000        # 1 year
+SECURE_HSTS_SECONDS = 31_536_000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -43,11 +44,12 @@ AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="us-east-1")
 AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = None             # Use bucket policy / ACLs disabled
+AWS_DEFAULT_ACL = None  # Use bucket policy / ACLs disabled
 AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": "max-age=86400",
 }
-AWS_QUERYSTRING_AUTH = False        # Public media (images); use signed URLs for private
+# Public media (images); use signed URLs for private
+AWS_QUERYSTRING_AUTH = False
 AWS_S3_CUSTOM_DOMAIN = config("AWS_CLOUDFRONT_DOMAIN", default="")
 
 # Store media files on S3
@@ -113,8 +115,7 @@ if SENTRY_DSN:
 # Logging — structured for log aggregation (Datadog, CloudWatch, etc.)
 # ---------------------------------------------------------------------------
 LOGGING["formatters"]["verbose"]["format"] = (  # noqa: F405
-    '{"time": "{asctime}", "level": "{levelname}", "logger": "{name}", '
-    '"line": {lineno}, "message": "{message}"}'
+    '{"time": "{asctime}", "level": "{levelname}", "logger": "{name}", ' '"line": {lineno}, "message": "{message}"}'
 )
 LOGGING["root"]["level"] = "WARNING"  # noqa: F405
 LOGGING["loggers"]["apps"]["level"] = "INFO"  # noqa: F405

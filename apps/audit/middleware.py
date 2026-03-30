@@ -4,6 +4,7 @@ Audit — Request Logging Middleware
 Logs every mutating request (POST/PUT/PATCH/DELETE) to the activity_logs
 table asynchronously via a Celery task so it never blocks the response path.
 """
+
 import logging
 
 logger = logging.getLogger(__name__)

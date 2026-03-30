@@ -7,13 +7,15 @@ Authenticates WebSocket connections using a JWT passed as a query parameter:
 Sets scope["user"] so Channels consumers can access the authenticated user
 the same way Django views use request.user.
 """
+
 from typing import Any
 from urllib.parse import parse_qs
 
-from channels.auth import AuthMiddlewareStack
-from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+
+from channels.auth import AuthMiddlewareStack
+from channels.db import database_sync_to_async
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import AccessToken
 

@@ -4,6 +4,7 @@ Audit — LoggedModelMixin
 Model mixin that auto-records create/update/delete events.
 Add to any model that needs a detailed audit trail.
 """
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ class LoggedModelMixin:
             log_model_event_task.apply_async(
                 kwargs={
                     "model": self.__class__.__name__,
-                    "pk":    str(self.pk),  # type: ignore[attr-defined]
+                    "pk": str(self.pk),  # type: ignore[attr-defined]
                     "action": action,
                 },
                 queue="audit",

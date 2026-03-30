@@ -23,6 +23,7 @@ Order in MIDDLEWARE list matters:
   defensively — if absent, it's a no-op and the request proceeds without
   RLS enforcement (which is fine for public/unauthenticated endpoints).
 """
+
 import logging
 
 from django.db import connection
@@ -63,7 +64,5 @@ class TenantIsolationMiddleware:
                     )
             except Exception:
                 # Graceful degradation — log but don't break the request.
-                logger.exception(
-                    "Failed to set app.current_org_id for org=%s", org.id
-                )
-        return None   # None = continue processing (don't short-circuit)
+                logger.exception("Failed to set app.current_org_id for org=%s", org.id)
+        return None  # None = continue processing (don't short-circuit)

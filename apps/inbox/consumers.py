@@ -4,6 +4,7 @@ Inbox — WebSocket Consumer
 InboxConsumer handles the ws/inbox/ endpoint.
 Delivers real-time comment and DM events to authenticated users.
 """
+
 import logging
 
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
@@ -30,8 +31,10 @@ class InboxConsumer(AsyncJsonWebsocketConsumer):
 
     async def inbox_message(self, event: dict) -> None:
         """New inbox message / comment received."""
-        await self.send_json({
-            "type": "inbox.message",
-            "conversationId": event["conversation_id"],
-            "message":        event["message"],
-        })
+        await self.send_json(
+            {
+                "type": "inbox.message",
+                "conversationId": event["conversation_id"],
+                "message": event["message"],
+            }
+        )

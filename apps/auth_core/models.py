@@ -7,6 +7,7 @@ Custom user model with:
 - MFA (TOTP) support fields
 - Soft timestamps
 """
+
 import uuid
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -83,7 +84,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []   # email + password are enough for createsuperuser
+    REQUIRED_FIELDS = []  # email + password are enough for createsuperuser
 
     class Meta:
         db_table = "users"
@@ -103,10 +104,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def active_membership(self):
-        """Return the user's first active org membership (most recently joined)."""
+        """Return the user's first active org membership.
+
+        Returns the most recently joined active membership.
+        """
         return (
-            self.organization_members  # type: ignore[attr-defined]
-            .filter(is_active=True)
+            self.organization_members.filter(is_active=True)  # type: ignore[attr-defined]
             .select_related("organization")
             .order_by("-joined_at")
             .first()

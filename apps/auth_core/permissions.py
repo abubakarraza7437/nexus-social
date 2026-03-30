@@ -9,6 +9,7 @@ Usage in ViewSets:
   permission_classes = [IsAuthenticated, IsAdmin]
   permission_classes = [IsAuthenticated, IsOwner]
 """
+
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -31,7 +32,7 @@ class HasOrgRole(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        # request.membership is attached by TenantIsolationMiddleware / JWT auth.
+        # request.membership is attached by TenantIsolationMiddleware.
         membership = getattr(request, "membership", None)
         if not membership:
             return False
@@ -39,7 +40,7 @@ class HasOrgRole(BasePermission):
         return membership.role in self._get_allowed_roles()
 
     def _get_allowed_roles(self) -> list[str]:
-        """Return all roles that satisfy the required_role level (inclusive)."""
+        """Return roles that satisfy the required_role level (inclusive)."""
         try:
             idx = self.ROLE_HIERARCHY.index(self.required_role)
         except ValueError:
@@ -49,19 +50,23 @@ class HasOrgRole(BasePermission):
 
 class IsViewer(HasOrgRole):
     """Allows any authenticated org member (viewer and above)."""
+
     required_role = "viewer"
 
 
 class IsEditor(HasOrgRole):
     """Allows editors, admins, and owners."""
+
     required_role = "editor"
 
 
 class IsAdmin(HasOrgRole):
     """Allows admins and owners only."""
+
     required_role = "admin"
 
 
 class IsOwner(HasOrgRole):
     """Allows the organization owner only."""
+
     required_role = "owner"

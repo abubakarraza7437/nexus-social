@@ -7,7 +7,10 @@ SocialOS — Development Settings
 - Django Silk + Extensions enabled for profiling.
 - Celery runs eagerly so tasks execute synchronously in tests when configured.
 """
+
 from .base import *  # noqa: F401, F403
+from .base import LOGGING  # noqa: F401
+from .base import DATABASES, INSTALLED_APPS, MIDDLEWARE, REST_FRAMEWORK, SECRET_KEY, SIMPLE_JWT, config
 
 # ---------------------------------------------------------------------------
 # Core
@@ -31,7 +34,8 @@ SIMPLE_JWT = {
 # ---------------------------------------------------------------------------
 # Database — local PostgreSQL (overridable via .env)
 # ---------------------------------------------------------------------------
-DATABASES["default"]["CONN_MAX_AGE"] = 0  # noqa: F405  # Disable persistent conns in dev
+# Disable persistent conns in dev
+DATABASES["default"]["CONN_MAX_AGE"] = 0
 
 # ---------------------------------------------------------------------------
 # Email — Print to console instead of sending
@@ -66,7 +70,7 @@ MIDDLEWARE = [  # noqa: F405
 
 SILKY_PYTHON_PROFILER = True
 SILKY_META = True
-SILKY_INTERCEPT_PERCENT = 100   # Profile all requests in dev
+SILKY_INTERCEPT_PERCENT = 100  # Profile all requests in dev
 
 # ---------------------------------------------------------------------------
 # DRF — Enable Browsable API in development
@@ -83,17 +87,21 @@ REST_FRAMEWORK = {  # noqa: F405
 # Celery — always-eager option (useful in unit tests)
 # Set CELERY_TASK_ALWAYS_EAGER=True in .env to run tasks synchronously.
 # ---------------------------------------------------------------------------
-CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=False, cast=bool)  # noqa: F405
+CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=False, cast=bool)
 
 # ---------------------------------------------------------------------------
 # Caching — local Redis or in-memory fallback
 # ---------------------------------------------------------------------------
 # Uncomment to use in-memory cache (no Redis required):
-# CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django.core.cache.backends.locmem.LocMemCache"
+#     }
+# }
 
 # ---------------------------------------------------------------------------
 # Logging — verbose SQL + app logs in development
 # ---------------------------------------------------------------------------
-LOGGING["loggers"]["django.db.backends"]["level"] = "DEBUG"  # noqa: F405
-LOGGING["root"]["level"] = "DEBUG"  # noqa: F405
-LOGGING["loggers"]["apps"]["level"] = "DEBUG"  # noqa: F405
+LOGGING["loggers"]["django.db.backends"]["level"] = "DEBUG"
+LOGGING["root"]["level"] = "DEBUG"
+LOGGING["loggers"]["apps"]["level"] = "DEBUG"

@@ -16,6 +16,7 @@ Standardises paginated list responses to the envelope format:
         "errors": []
     }
 """
+
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
@@ -54,8 +55,8 @@ class StandardResultsPagination(PageNumberPagination):
                         "pagination": {
                             "type": "object",
                             "properties": {
-                                "page":        {"type": "integer"},
-                                "page_size":   {"type": "integer"},
+                                "page": {"type": "integer"},
+                                "page_size": {"type": "integer"},
                                 "total_count": {"type": "integer"},
                                 "total_pages": {"type": "integer"},
                             },

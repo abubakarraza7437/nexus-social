@@ -12,6 +12,7 @@ Usage (from any Celery task or Django signal):
         "status":  "published",
     })
 """
+
 import logging
 from typing import Any
 from uuid import UUID

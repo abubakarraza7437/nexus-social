@@ -3,9 +3,10 @@ Utils — Health & Readiness Check Views
 =========================================
 Used by Kubernetes liveness and readiness probes.
 
-GET /health/   → liveness  — returns 200 if the process is alive (no DB check)
-GET /ready/    → readiness — returns 200 only when DB, Redis, and Celery are reachable
+GET /health/   → liveness  — returns 200 if the process is alive (no DB)
+GET /ready/    → readiness — returns 200 when DB, Redis, Celery are reachable
 """
+
 import logging
 
 from django.db import connection
@@ -34,14 +35,16 @@ class ReadinessView(View):
 
     def get(self, request, *args, **kwargs) -> JsonResponse:
         checks = {
-            "db":     self._check_db(),
-            "redis":  self._check_redis(),
+            "db": self._check_db(),
+            "redis": self._check_redis(),
             "celery": self._check_celery(),
         }
         all_ok = all(checks.values())
         status_code = 200 if all_ok else 503
-        return JsonResponse({"status": "ok" if all_ok else "degraded", "checks": checks},
-                            status=status_code)
+        return JsonResponse(
+            {"status": "ok" if all_ok else "degraded", "checks": checks},
+            status=status_code,
+        )
 
     def _check_db(self) -> bool:
         try:
@@ -54,6 +57,7 @@ class ReadinessView(View):
     def _check_redis(self) -> bool:
         try:
             from django.core.cache import cache
+
             cache.set("_readiness_probe", "1", timeout=5)
             return cache.get("_readiness_probe") == "1"
         except Exception:
@@ -63,6 +67,7 @@ class ReadinessView(View):
     def _check_celery(self) -> bool:
         try:
             from socialos.celery import app as celery_app
+
             celery_app.control.inspect(timeout=1).ping()
             return True
         except Exception:

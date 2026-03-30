@@ -8,15 +8,16 @@ WebSocket endpoints:
   ws/inbox/    → InboxConsumer   (real-time messaging)
 
 Scaling: All Channels instances share the same Redis channel layer, so
-horizontal scaling only requires pointing all instances at the same Redis cluster.
+horizontal scaling requires pointing all instances at the same Redis cluster.
 """
+
 import os
 
 from django.core.asgi import get_asgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "socialos.settings.development")
 
-# Initialise Django BEFORE importing Channels routing (avoids AppRegistryNotReady).
+# Initialise Django BEFORE importing Channels routing.
 django_asgi_app = get_asgi_application()
 
 from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
@@ -30,12 +31,8 @@ application = ProtocolTypeRouter(
         # Standard Django HTTP handling
         "http": django_asgi_app,
         # WebSocket connections
-        # AllowedHostsOriginValidator → rejects WS connections from untrusted origins.
-        # JWTAuthMiddlewareStack      → authenticates via JWT query param or cookie.
-        "websocket": AllowedHostsOriginValidator(
-            JWTAuthMiddlewareStack(
-                URLRouter(websocket_urlpatterns)
-            )
-        ),
+        # AllowedHostsOriginValidator → rejects WS from untrusted origins.
+        # JWTAuthMiddlewareStack → authenticates via JWT query param/cookie.
+        "websocket": AllowedHostsOriginValidator(JWTAuthMiddlewareStack(URLRouter(websocket_urlpatterns))),
     }
 )

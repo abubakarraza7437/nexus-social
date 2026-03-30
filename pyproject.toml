@@ -141,12 +141,45 @@ ignore = ["E501"]
 exclude = ["migrations", ".venv"]
 
 # ---------------------------------------------------------------------------
+# isort (import sorting — compatible with black)
+# ---------------------------------------------------------------------------
+[tool.isort]
+profile = "black"
+line_length = 120
+skip = [".venv"]
+known_django = ["django"]
+known_drf = ["rest_framework"]
+known_first_party = ["apps", "socialos", "utils"]
+sections = [
+    "FUTURE",
+    "STDLIB",
+    "DJANGO",
+    "DRF",
+    "THIRDPARTY",
+    "FIRSTPARTY",
+    "LOCALFOLDER",
+]
+
+# ---------------------------------------------------------------------------
+# black (code formatter)
+# ---------------------------------------------------------------------------
+[tool.black]
+line-length = 120
+target-version = ["py312"]
+exclude = '''
+/(
+    \.git
+    | \.venv
+    | __pycache__
+)/
+'''
+
+# ---------------------------------------------------------------------------
 # flake8 tool
 # ---------------------------------------------------------------------------
 [tool.flake8]
 max-line-length = 120
 exclude = [
-    "migrations",
     "__pycache__",
     ".venv",
 ]

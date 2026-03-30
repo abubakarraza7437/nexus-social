@@ -5,6 +5,8 @@
 
 -r requirements.txt
 
+#pre-commit
+pre-commit==4.5.1
 # Profiling & Debug
 django-silk>=5.2,<6.0
 django-extensions>=3.2,<4.0

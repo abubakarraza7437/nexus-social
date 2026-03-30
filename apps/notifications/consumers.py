@@ -9,6 +9,7 @@ On connect: joins two channel groups —
 
 Celery workers push events via notify_org() / notify_user() in dispatcher.py.
 """
+
 import logging
 
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
@@ -58,17 +59,21 @@ class EventConsumer(AsyncJsonWebsocketConsumer):
 
     async def post_status_update(self, event: dict) -> None:
         """Fired by publisher worker when a post is published or fails."""
-        await self.send_json({
-            "type": "post.status",
-            "postId": event["post_id"],
-            "status": event["status"],
-        })
+        await self.send_json(
+            {
+                "type": "post.status",
+                "postId": event["post_id"],
+                "status": event["status"],
+            }
+        )
 
     async def notification(self, event: dict) -> None:
-        """Generic notification message (approval requests, token expiry, etc.)."""
-        await self.send_json({
-            "type": "notification",
-            "title": event.get("title", ""),
-            "body":  event.get("body", ""),
-            "data":  event.get("data", {}),
-        })
+        """Generic notification (approval requests, token expiry, etc.)."""
+        await self.send_json(
+            {
+                "type": "notification",
+                "title": event.get("title", ""),
+                "body": event.get("body", ""),
+                "data": event.get("data", {}),
+            }
+        )

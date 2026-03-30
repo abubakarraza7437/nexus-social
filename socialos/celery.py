@@ -5,6 +5,7 @@ Queue topology (priority order):
   publish (10) → scheduler (8) → ai (6) → analytics (5)
   → notifications (4) → reports (2) → audit (1)
 """
+
 import os
 
 from celery import Celery
@@ -12,7 +13,7 @@ from celery.utils.log import get_task_logger
 
 logger = get_task_logger(__name__)
 
-# Default to development; overridden by DJANGO_SETTINGS_MODULE env var in containers.
+# Default to development; overridden by DJANGO_SETTINGS_MODULE in containers.
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "socialos.settings.development")
 
 app = Celery("socialos")

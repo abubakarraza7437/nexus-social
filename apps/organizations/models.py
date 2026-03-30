@@ -2,12 +2,13 @@
 Organizations — Models
 ========================
 Organization is the tenant root. Every other model has org_id.
-Row-Level Security (RLS) on PostgreSQL enforces tenant isolation at the DB level.
+RLS on PostgreSQL enforces tenant isolation at the DB level.
 
 Models:
-  Organization      — the SaaS tenant (a company, agency, or individual account)
+  Organization       — the SaaS tenant (company, agency, or individual)
   OrganizationMember — join table: user ↔ org with a role
 """
+
 import uuid
 
 from django.conf import settings
@@ -35,7 +36,7 @@ class Organization(models.Model):
 
     # Subscription
     plan = models.CharField(max_length=20, choices=Plan.choices, default=Plan.FREE)
-    plan_limits = models.JSONField(default=dict)  # Denormalized snapshot of limits
+    plan_limits = models.JSONField(default=dict)  # Denormalized limits
 
     # Billing (Stripe)
     billing_customer_id = models.CharField(max_length=100, blank=True)
@@ -79,6 +80,7 @@ class Organization(models.Model):
         # Auto-populate plan_limits when plan changes
         if not self.plan_limits or self._plan_changed():
             from django.conf import settings as django_settings
+
             self.plan_limits = django_settings.PLAN_LIMITS.get(self.plan, {})
         super().save(*args, **kwargs)
 
@@ -86,7 +88,8 @@ class Organization(models.Model):
         if not self.pk:
             return True
         try:
-            return Organization.objects.filter(pk=self.pk).values_list("plan", flat=True)[0] != self.plan
+            old_plan = Organization.objects.filter(pk=self.pk).values_list("plan", flat=True)[0]
+            return old_plan != self.plan
         except IndexError:
             return True
 

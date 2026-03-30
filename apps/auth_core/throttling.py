@@ -10,6 +10,7 @@ Rate limits:
   business   → 50,000 requests / day
   enterprise → unlimited
 """
+
 from rest_framework.throttling import SimpleRateThrottle
 
 
@@ -18,7 +19,7 @@ class OrgPlanThrottle(SimpleRateThrottle):
     Per-organization throttle keyed to the org's subscription plan.
 
     Falls back to "100/day" for unauthenticated or plan-less requests.
-    The enterprise plan bypasses throttling entirely (returns True immediately).
+    Enterprise plan bypasses throttling entirely (returns True immediately).
     """
 
     scope = "org_plan"
@@ -27,11 +28,11 @@ class OrgPlanThrottle(SimpleRateThrottle):
         "free": "100/day",
         "pro": "10000/day",
         "business": "50000/day",
-        "enterprise": None,     # None = no limit
+        "enterprise": None,  # None = no limit
     }
 
     def get_rate(self) -> str | None:
-        """Return a default rate; the real per-plan rate is applied in allow_request."""
+        """Return default rate; real per-plan rate applied in allow_request."""
         return self.PLAN_RATES["free"]
 
     def allow_request(self, request, view) -> bool:
