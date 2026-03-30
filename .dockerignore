@@ -1,0 +1,59 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info
+dist/
+build/
+
+# Virtual environments
+.venv
+venv
+env
+
+# Test / coverage
+.pytest_cache
+.coverage
+htmlcov
+.mypy_cache
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local config
+.env
+*.local
+
+# Media / static (handled by S3 / WhiteNoise)
+media/
+staticfiles/
+
+# Docs
+*.md
+docs/
+
+# Docker files themselves
+docker/
+
+# Helm / k8s
+helm/
+
+# Logs
+*.log
+logs/
+
+# Silk profiler data
+silk/
