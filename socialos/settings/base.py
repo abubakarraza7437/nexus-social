@@ -367,14 +367,14 @@ CELERY_TIMEZONE = "UTC"
 CELERY_ENABLE_UTC = True
 
 # Reliability
-CELERY_TASK_ACKS_LATE = True            # Acknowledge after completion, not on receipt
+CELERY_TASK_ACKS_LATE = True             # Acknowledge after completion, not on receipt
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
-CELERY_WORKER_PREFETCH_MULTIPLIER = 1   # Fetch one task at a time (fair distribution)
-CELERY_WORKER_MAX_TASKS_PER_CHILD = 500 # Recycle workers to prevent memory leaks
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1    # Fetch one task at a time (fair distribution)
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 500  # Recycle workers to prevent memory leaks
 
 # Timeouts
-CELERY_TASK_TIME_LIMIT = 30 * 60        # 30-minute hard kill
-CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60   # 25-minute soft limit (raises SoftTimeLimitExceeded)
+CELERY_TASK_TIME_LIMIT = 30 * 60         # 30-minute hard kill
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60    # 25-minute soft limit (raises SoftTimeLimitExceeded)
 
 # Tracking
 CELERY_TASK_TRACK_STARTED = True
