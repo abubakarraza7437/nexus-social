@@ -144,7 +144,7 @@ exclude = ["migrations", ".venv"]
 # flake8 tool
 # ---------------------------------------------------------------------------
 [tool.flake8]
-max-line-length = 10
+max-line-length = 110
 exclude = [
     "migrations",
     "__pycache__",
