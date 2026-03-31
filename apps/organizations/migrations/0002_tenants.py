@@ -7,7 +7,7 @@ Changes:
   OrganizationMember — rename joined_at → created_at; update role choices/default
 """
 import django.db.models.deletion
-import uuid
+
 from django.conf import settings
 from django.db import migrations, models
 
