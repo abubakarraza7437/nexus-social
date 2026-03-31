@@ -1,0 +1,129 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  flake8:
+    name: Flake8 Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Run Flake8
+        run: flake8 . --max-line-length=120
+
+  migration-conflict-check:
+    name: Migration Conflict Check
+    runs-on: ubuntu-latest
+    needs: flake8
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for duplicate migration numbers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          root = Path(".")
+          migration_dirs = root.glob("apps/*/migrations")
+          conflict_found = False
+
+          for mig_dir in migration_dirs:
+              if not mig_dir.is_dir():
+                  continue
+
+              seen = {}
+              for file in mig_dir.glob("[0-9][0-9][0-9][0-9]_*.py"):
+                  match = re.match(r"^([0-9]{4})_", file.name)
+                  if not match:
+                      continue
+
+                  prefix = match.group(1)
+                  if prefix in seen:
+                      print(
+                          f"Duplicate migration number in {mig_dir}: "
+                          f"{seen[prefix].name} and {file.name}"
+                      )
+                      conflict_found = True
+                  else:
+                      seen[prefix] = file
+
+          if conflict_found:
+              sys.exit(1)
+
+          print("No migration number conflicts found.")
+          PY
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: migration-conflict-check
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: socialos
+          POSTGRES_USER: social_user
+          POSTGRES_PASSWORD: social_pwd
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U social_user -d socialos"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DJANGO_SETTINGS_MODULE: socialos.settings.development
+      DATABASE_URL: postgres://social_user:social_pwd@localhost:5432/socialos
+      REDIS_URL: redis://localhost:6379/0
+      PYTHONUNBUFFERED: 1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+
+      - name: Run tests
+        run: pytest
