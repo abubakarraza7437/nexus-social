@@ -133,22 +133,11 @@ exclude_dirs = ["tests", "migrations", ".venv"]
 skips = ["B101"]   # assert statements are fine in tests
 
 # ---------------------------------------------------------------------------
-# ruff (fast linter / formatter — install separately if needed)
-# ---------------------------------------------------------------------------
-[tool.ruff]
-line-length = 100
-target-version = "py312"
-select = ["E", "W", "F", "I", "B", "C4", "UP"]
-ignore = ["E501"]
-exclude = ["migrations", ".venv"]
-
-# ---------------------------------------------------------------------------
-# flake8 tool
+# flake8 (linter)
 # ---------------------------------------------------------------------------
 [tool.flake8]
 max-line-length = 120
 exclude = [
-    "migrations",
     "__pycache__",
     ".venv",
 ]
