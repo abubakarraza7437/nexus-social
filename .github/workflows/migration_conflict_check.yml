@@ -1,0 +1,56 @@
+name: Migration Conflict Check
+
+on:
+  workflow_run:
+    workflows: ["Flake8 Lint"]
+    types:
+      - completed
+
+jobs:
+  migration-conflict-check:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.workflow_run.head_repository.full_name }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Check for duplicate migration numbers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          root = Path(".")
+          migration_dirs = root.glob("apps/*/migrations")
+          conflict_found = False
+
+          for mig_dir in migration_dirs:
+              if not mig_dir.is_dir():
+                  continue
+
+              seen = {}
+              for file in mig_dir.glob("[0-9][0-9][0-9][0-9]_*.py"):
+                  match = re.match(r"^([0-9]{4})_", file.name)
+                  if not match:
+                      continue
+
+                  prefix = match.group(1)
+                  if prefix in seen:
+                      print(
+                          f"Duplicate migration number in {mig_dir}: "
+                          f"{seen[prefix].name} and {file.name}"
+                      )
+                      conflict_found = True
+                  else:
+                      seen[prefix] = file
+
+          if conflict_found:
+              sys.exit(1)
+
+          print("No migration number conflicts found.")
+          PY
