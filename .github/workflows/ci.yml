@@ -82,7 +82,7 @@ jobs:
         env:
           POSTGRES_DB: socialos
           POSTGRES_USER: socialos
-          POSTGRES_PASSWORD: social_pwd
+          POSTGRES_PASSWORD: socialos
         ports:
           - 5432:5432
         options: >-
@@ -104,7 +104,7 @@ jobs:
     env:
       DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       DJANGO_SETTINGS_MODULE: socialos.settings.development
-      DATABASE_URL: postgres://socialos:social_pwd@127.0.0.1:5432/socialos
+      DATABASE_URL: postgres://socialos:socialos@127.0.0.1:5432/socialos
       REDIS_URL: redis://localhost:6379/0
       PYTHONUNBUFFERED: 1
 
