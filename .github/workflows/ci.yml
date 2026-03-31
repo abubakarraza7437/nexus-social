@@ -102,6 +102,7 @@ jobs:
           --health-retries=5
 
     env:
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       DJANGO_SETTINGS_MODULE: socialos.settings.development
       DATABASE_URL: postgres://social_user:social_pwd@localhost:5432/socialos
       REDIS_URL: redis://localhost:6379/0
