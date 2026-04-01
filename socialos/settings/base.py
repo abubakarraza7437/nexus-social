@@ -21,20 +21,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # ---------------------------------------------------------------------------
 # Environment & Security
 # ---------------------------------------------------------------------------
-DJANGO_ENV: str = config("DJANGO_ENV", default="development").lower()
-ENV_PREFIX = "PROD_" if DJANGO_ENV == "production" else ("STAG_" if DJANGO_ENV == "staging" else "")
+ENVIRONMENT: str = config("ENVIRONMENT", default="development").lower()
+ENV_PREFIX = "PROD_" if ENVIRONMENT == "production" else ("STAG_" if ENVIRONMENT == "staging" else "")
 
 
 def env_var(name: str, default=None, cast=None):
     try:
-        return config(f"{ENV_PREFIX}{name}", cast=cast)
+        # First attempt: search for prefixed variable without a default
+        # to see if it's explicitly set for the environment.
+        if ENV_PREFIX:
+            return config(f"{ENV_PREFIX}{name}", cast=cast)
+        raise UndefinedValueError
     except UndefinedValueError:
+        # Second attempt: search for the unprefixed variable with the provided default.
         return config(name, default=default, cast=cast)
 
 
 SECRET_KEY: str = config("DJANGO_SECRET_KEY")
 DEBUG: bool = env_var("DEBUG", default=False, cast=bool)
-if DJANGO_ENV == "production":
+if ENVIRONMENT == "production":
     DEBUG = False
 ALLOWED_HOSTS: list[str] = config("ALLOWED_HOSTS", default="", cast=Csv())
 
@@ -156,15 +161,22 @@ WSGI_APPLICATION = "socialos.wsgi.application"
 # ---------------------------------------------------------------------------
 # Database — PostgreSQL 16
 # ---------------------------------------------------------------------------
+ENGINE = env_var("SQL_ENGINE", "django_tenants.postgresql_backend")
+NAME = env_var("DB_NAME", default="socialos")
+USER = env_var("DB_USER", default="socialos")
+PASSWORD = env_var("DB_PASSWORD", default="socialos")
+HOST = env_var("DB_HOST", default="localhost")
+PORT = env_var("DB_PORT", default="5432")
+
 DATABASES = {
     "default": {
         # django-tenants requires its own backend wrapper (wraps psycopg2).
-        "ENGINE": env_var("SQL_ENGINE", "django_tenants.postgresql_backend"),
-        "NAME": env_var("DB_NAME", default="socialos"),
-        "USER": env_var("DB_USER", default="socialos"),
-        "PASSWORD": env_var("DB_PASSWORD", default="socialos"),
-        "HOST": env_var("DB_HOST", default="localhost"),
-        "PORT": env_var("DB_PORT", default="5432"),
+        "ENGINE": ENGINE,
+        "NAME": NAME,
+        "USER": USER,
+        "PASSWORD": PASSWORD,
+        "HOST": HOST,
+        "PORT": PORT,
         # Persistent connections — avoids TCP handshake overhead.
         # Set to 0 in PgBouncer (transaction-mode) environments.
         "CONN_MAX_AGE": env_var("DB_CONN_MAX_AGE", default=60, cast=int),
