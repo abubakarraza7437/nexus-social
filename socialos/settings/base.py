@@ -89,6 +89,7 @@ TENANT_APPS = [
     "apps.content.apps.ContentConfig",
     "apps.scheduler.apps.SchedulerConfig",
     "apps.publisher.apps.PublisherConfig",
+    "apps.posts.apps.PostsConfig",
     "apps.analytics.apps.AnalyticsConfig",
     "apps.inbox.apps.InboxConfig",
     "apps.ai_engine.apps.AIEngineConfig",
