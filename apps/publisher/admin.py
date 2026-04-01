@@ -9,7 +9,7 @@ from apps.publisher.models import Post
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ("id", "organization", "author", "status", "scheduled_at", "published_at", "created_at")
+    list_display = ("id", "organization", "author", "status", "posted_on", "scheduled_at", "published_at", "created_at")
     list_filter = ("status", "organization", "created_at", "scheduled_at")
     search_fields = ("id", "content", "organization__name", "author__email")
     readonly_fields = ("id", "created_at", "updated_at", "platform_ids")
