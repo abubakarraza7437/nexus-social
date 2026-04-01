@@ -1,1 +1,1 @@
-"""Publisher — Models (implemented in feature section)."""
+"""Publisher — models"""

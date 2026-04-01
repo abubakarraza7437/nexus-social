@@ -1,1 +1,4 @@
-"""Publisher — Admin registration (implemented in feature section)."""
+"""
+Publisher — Admin Configuration
+===============================
+"""
