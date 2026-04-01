@@ -27,14 +27,16 @@ ENV_PREFIX = "PROD_" if ENVIRONMENT == "production" else ("STAG_" if ENVIRONMENT
 
 def env_var(name: str, default=None, cast=None):
     try:
-        # First attempt: search for prefixed variable without a default
-        # to see if it's explicitly set for the environment.
-        if ENV_PREFIX:
-            return config(f"{ENV_PREFIX}{name}", cast=cast)
-        raise UndefinedValueError
+        key = f"{ENV_PREFIX}{name}" if ENV_PREFIX else name
+
+        if cast is not None:
+            return config(key, cast=cast)
+        return config(key)
+
     except UndefinedValueError:
-        # Second attempt: search for the unprefixed variable with the provided default.
-        return config(name, default=default, cast=cast)
+        if cast is not None:
+            return config(name, default=default, cast=cast)
+        return config(name, default=default)
 
 
 SECRET_KEY: str = config("DJANGO_SECRET_KEY")
