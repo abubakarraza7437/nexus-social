@@ -1,16 +1,41 @@
 """
-Auth Core — Plan-Based Rate Limiting
-======================================
-Throttle requests per organization based on their subscription plan.
-Uses a Redis sliding-window implemented via a Lua script for atomicity.
+Auth Core — Rate Limiting
+==========================
+Two throttle classes:
 
-Rate limits:
-  free       →    100 requests / day
-  pro        → 10,000 requests / day
-  business   → 50,000 requests / day
-  enterprise → unlimited
+AuthRateThrottle   — for public auth endpoints (signup, login, forgot-password,
+                     resend-verification). Keyed by IP. Generous enough for
+                     normal use, tight enough to slow brute-force / abuse.
+                     Rates: 20/hour for most, 5/hour for resend-verification.
+
+OrgPlanThrottle    — per-organization API throttle based on subscription plan.
+                     Applied to authenticated tenant endpoints only.
+                     free → 100/day, pro → 10 000/day, business → 50 000/day.
 """
 from rest_framework.throttling import SimpleRateThrottle
+
+
+class AuthRateThrottle(SimpleRateThrottle):
+    """
+    IP-based throttle for public auth endpoints.
+
+    Apply via throttle_classes = [AuthRateThrottle] on each view.
+    Override `scope` on the view's throttle to get different rates:
+      "auth"               → 20/hour  (signup, login, forgot-password, reset-password)
+      "auth_resend"        → 5/hour   (resend-verification — stricter to limit spam)
+    """
+
+    scope = "auth"
+
+    def get_cache_key(self, request, view) -> str | None:
+        return self.cache_format % {
+            "scope": self.scope,
+            "ident": self.get_ident(request),
+        }
+
+
+class ResendVerificationThrottle(AuthRateThrottle):
+    scope = "auth_resend"
 
 
 class OrgPlanThrottle(SimpleRateThrottle):

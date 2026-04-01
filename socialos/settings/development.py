@@ -34,9 +34,12 @@ SIMPLE_JWT = {
 DATABASES["default"]["CONN_MAX_AGE"] = 0  # noqa: F405  # Disable persistent conns in dev
 
 # ---------------------------------------------------------------------------
-# Email — Print to console instead of sending
+# Email — Use SMTP backend from .env (falls back to console for dev convenience)
 # ---------------------------------------------------------------------------
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = config(  # noqa: F405
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend",
+)
 
 # ---------------------------------------------------------------------------
 # CORS — Accept all origins in development

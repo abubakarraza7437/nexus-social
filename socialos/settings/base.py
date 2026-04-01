@@ -261,6 +261,8 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/hour",
+        "auth": "20/hour",
+        "auth_resend": "5/hour",
     },
     "EXCEPTION_HANDLER": "utils.exceptions.custom_exception_handler",
     # Only JSON responses — no browsable API in production.
@@ -453,6 +455,7 @@ EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="SocialOS <noreply@socialos.io>")
+MAILTRAP_API_KEY: str = config("MAILTRAP_API_KEY", default="")
 
 # ---------------------------------------------------------------------------
 # Security Headers (base values — strengthened in production.py)

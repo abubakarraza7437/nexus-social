@@ -25,9 +25,10 @@ from .serializers import (
     SignupSerializer,
 )
 from .services import (
-    create_user_with_organization,
+    create_user,
     send_password_reset_email,
 )
+from .throttling import AuthRateThrottle, ResendVerificationThrottle
 
 
 # ---------------------------------------------------------------------------
@@ -44,12 +45,13 @@ class SignupView(APIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
     serializer_class = SignupSerializer
 
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        create_user_with_organization(serializer.validated_data)
+        create_user(serializer.validated_data)
         return Response(
             {"detail": "Account created. Please verify your email."},
             status=status.HTTP_201_CREATED,
@@ -69,6 +71,7 @@ class LoginView(TokenObtainPairView):
     """
 
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
 
 
 class RefreshView(TokenRefreshView):
@@ -80,6 +83,7 @@ class RefreshView(TokenRefreshView):
     """
 
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +133,7 @@ class ForgotPasswordView(APIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
     serializer_class = ForgotPasswordSerializer
 
     def post(self, request):
@@ -184,6 +189,7 @@ class ResetPasswordView(APIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
     serializer_class = ResetPasswordSerializer
 
     def post(self, request):
@@ -223,3 +229,120 @@ class ResetPasswordView(APIView):
             {"detail": "Password updated successfully."},
             status=status.HTTP_200_OK,
         )
+
+
+# ---------------------------------------------------------------------------
+# Verify Email
+# ---------------------------------------------------------------------------
+
+class VerifyEmailView(APIView):
+    """
+    Consume an email-verification token and mark the user as verified.
+
+    GET /auth/verify-email/?token=<token>
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
+
+    def get(self, request):
+        from apps.auth_core.models import EmailVerificationToken
+
+        token_value = request.query_params.get("token", "").strip()
+        if not token_value:
+            return Response(
+                {"detail": "Token is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            token = EmailVerificationToken.objects.select_related("user").get(
+                token=token_value,
+            )
+        except EmailVerificationToken.DoesNotExist:
+            return Response(
+                {"detail": "Invalid verification link. Please request a new one."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Already used — check if the user is verified (e.g. double click / StrictMode)
+        if token.is_used:
+            if token.user.is_verified:
+                return Response(
+                    {"detail": "Email already verified. You can now sign in."},
+                    status=status.HTTP_200_OK,
+                )
+            return Response(
+                {"detail": "This link has already been used. Please request a new one."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if token.is_expired:
+            return Response(
+                {"detail": "This verification link has expired. Please request a new one."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = token.user
+        user.is_verified = True
+        user.save(update_fields=["is_verified"])
+
+        token.is_used = True
+        token.save(update_fields=["is_used"])
+
+        return Response(
+            {"detail": "Email verified successfully. You can now sign in."},
+            status=status.HTTP_200_OK,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Resend Verification Email
+# ---------------------------------------------------------------------------
+
+class ResendVerificationEmailView(APIView):
+    """
+    Resend the email-verification link to an unverified user.
+
+    POST /auth/resend-verification/
+    Body: { email }
+
+    Always returns 200 to avoid leaking whether an email is registered.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ResendVerificationThrottle]
+
+    def post(self, request):
+        from apps.auth_core.models import EmailVerificationToken
+        from .services import send_verification_email
+
+        email = request.data.get("email", "").strip().lower()
+        if not email:
+            return Response(
+                {"detail": "Email is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        _SAFE_RESPONSE = Response(
+            {"detail": "If that email is registered and unverified, a new link has been sent."},
+            status=status.HTTP_200_OK,
+        )
+
+        try:
+            from apps.auth_core.models import User
+            user = User.objects.get(email__iexact=email, is_active=True)
+        except User.DoesNotExist:
+            return _SAFE_RESPONSE
+
+        if user.is_verified:
+            return _SAFE_RESPONSE
+
+        # Invalidate all prior unused tokens for this user.
+        EmailVerificationToken.objects.filter(user=user, is_used=False).update(is_used=True)
+
+        # Issue a fresh token and send it.
+        new_token = EmailVerificationToken.objects.create(user=user)
+        send_verification_email(user, new_token.token)
+
+        return _SAFE_RESPONSE

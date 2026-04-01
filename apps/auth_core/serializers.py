@@ -64,7 +64,7 @@ class SignupSerializer(serializers.Serializer):
         normalized = User.objects.normalize_email(value)
         if User.objects.filter(email__iexact=normalized).exists():
             raise serializers.ValidationError(
-                "A user with this email already exists."
+                "This email is already registered. Please sign in instead."
             )
         return normalized
 
