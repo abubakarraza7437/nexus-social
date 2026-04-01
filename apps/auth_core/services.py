@@ -2,8 +2,7 @@
 Auth Core — Services
 ====================
 Business-logic functions for user registration, organisation bootstrapping,
-and transactional email dispatch (mocked via logging until a real provider
-is wired in).
+and transactional email dispatch via Gmail SMTP.
 """
 import logging
 import re
@@ -11,6 +10,7 @@ import uuid
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 from django.db import transaction
 
 logger = logging.getLogger(__name__)
@@ -65,11 +65,40 @@ def _unique_slug(base: str) -> str:
 # ---------------------------------------------------------------------------
 
 @transaction.atomic
+def create_user(validated_data: dict) -> User:
+    """
+    Create a User and dispatch the email-verification token.
+
+    This is the standard signup path. Organisation creation is deferred to
+    the post-signup onboarding flow (POST /api/v1/orgs/check-or-create/).
+
+    Args:
+        validated_data: cleaned dict with keys ``email``, ``password``, ``name``.
+
+    Returns:
+        The newly-created :class:`~apps.auth_core.models.User` instance.
+    """
+    from apps.auth_core.models import EmailVerificationToken
+
+    email: str = validated_data["email"]
+    password: str = validated_data["password"]
+    name: str = validated_data.get("name", "")
+
+    user = User.objects.create_user(email=email, password=password, name=name)
+
+    ev_token = EmailVerificationToken.objects.create(user=user)
+    send_verification_email(user, ev_token.token)
+
+    return user
+
+
+@transaction.atomic
 def create_user_with_organization(validated_data: dict) -> User:
     """
-    Atomically create a User, generate an email-verification token, bootstrap
-    a personal Organisation (with its PostgreSQL schema and primary Domain),
-    and assign the user as OWNER.
+    Atomically create a User and bootstrap a personal Organisation.
+
+    Retained for admin / internal tooling. The public signup flow uses
+    :func:`create_user` instead, deferring org creation to onboarding.
 
     Args:
         validated_data: cleaned dict with keys ``email``, ``password``, ``name``.
@@ -87,7 +116,7 @@ def create_user_with_organization(validated_data: dict) -> User:
     # 1. Create user.
     user = User.objects.create_user(email=email, password=password, name=name)
 
-    # 2. Email verification token + mock send.
+    # 2. Email verification token.
     ev_token = EmailVerificationToken.objects.create(user=user)
     send_verification_email(user, ev_token.token)
 
@@ -129,32 +158,76 @@ def create_user_with_organization(validated_data: dict) -> User:
 
 
 # ---------------------------------------------------------------------------
-# Mock email helpers (replace with Celery tasks / email provider later)
+# Email helpers (Gmail SMTP via Django's send_mail)
 # ---------------------------------------------------------------------------
 
+def _send_email(to_email: str, subject: str, html: str, text: str) -> None:
+    """Send a transactional email through Django's configured SMTP backend."""
+    try:
+        send_mail(
+            subject=subject,
+            message=text,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[to_email],
+            html_message=html,
+            fail_silently=False,
+        )
+        logger.info("EMAIL [%s] sent to=%s", subject, to_email)
+    except Exception as exc:
+        logger.error("EMAIL send failed to=%s error=%s", to_email, exc)
+
+
 def send_verification_email(user, token: str) -> None:
-    """Log a mock verification email."""
-    logger.info(
-        "MOCK EMAIL [verification] to=%s token=%s",
-        user.email,
-        token,
+    """Send an email-verification link."""
+    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+    verify_url = f"{frontend_url}/verify-email?token={token}"
+
+    html = (
+        f"<p>Hi {user.name or user.email},</p>"
+        f"<p>Please verify your email address by clicking the link below:</p>"
+        f'<p><a href="{verify_url}">{verify_url}</a></p>'
+        f"<p>This link expires in 24 hours.</p>"
     )
+    text = (
+        f"Hi {user.name or user.email},\n\n"
+        f"Please verify your email address by visiting:\n{verify_url}\n\n"
+        f"This link expires in 24 hours."
+    )
+    _send_email(user.email, "Verify your email address", html, text)
 
 
 def send_password_reset_email(user, token: str) -> None:
-    """Log a mock password-reset email."""
-    logger.info(
-        "MOCK EMAIL [password_reset] to=%s token=%s",
-        user.email,
-        token,
+    """Send a password-reset link."""
+    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+    reset_url = f"{frontend_url}/reset-password?token={token}"
+
+    html = (
+        f"<p>Hi {user.name or user.email},</p>"
+        f"<p>We received a request to reset your password. Click the link below:</p>"
+        f'<p><a href="{reset_url}">{reset_url}</a></p>'
+        f"<p>This link expires in 1 hour. If you did not request this, ignore this email.</p>"
     )
+    text = (
+        f"Hi {user.name or user.email},\n\n"
+        f"We received a request to reset your password. Visit:\n{reset_url}\n\n"
+        f"This link expires in 1 hour. If you did not request this, ignore this email."
+    )
+    _send_email(user.email, "Reset your password", html, text)
 
 
 def send_invitation_email(to_email: str, org, token: str) -> None:
-    """Log a mock org-invitation email."""
-    logger.info(
-        "MOCK EMAIL [invitation] to=%s org=%s token=%s",
-        to_email,
-        org.name,
-        token,
+    """Send an organisation invitation."""
+    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+    invite_url = f"{frontend_url}/accept-invite?token={token}"
+
+    html = (
+        f"<p>You have been invited to join <strong>{org.name}</strong> on SocialOS.</p>"
+        f'<p><a href="{invite_url}">Accept Invitation</a></p>'
+        f"<p>This invitation expires in 7 days.</p>"
     )
+    text = (
+        f"You have been invited to join {org.name} on SocialOS.\n\n"
+        f"Accept your invitation here:\n{invite_url}\n\n"
+        f"This invitation expires in 7 days."
+    )
+    _send_email(to_email, f"You're invited to {org.name}", html, text)

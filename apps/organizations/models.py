@@ -203,6 +203,110 @@ class OrganizationMember(models.Model):
 
 
 # ---------------------------------------------------------------------------
+# JoinRequest  (user-initiated request to join an existing org)
+# ---------------------------------------------------------------------------
+
+class JoinRequest(models.Model):
+    """
+    Represents a user-initiated request to join an existing Organization.
+
+    Security model (Slack/Notion-style):
+      - Users cannot auto-join organizations based on name/domain.
+      - A JoinRequest must be explicitly approved by an OWNER or ADMIN.
+      - Only one pending request per user+org pair is allowed.
+
+    Lifecycle:
+      1. User submits org name → org exists → user confirms join request.
+      2. JoinRequest created with status=PENDING.
+      3. Notification sent to org OWNER/ADMIN.
+      4. OWNER/ADMIN approves → OrganizationMember created, status=APPROVED.
+         OR OWNER/ADMIN rejects → status=REJECTED.
+
+    Requests expire after 30 days if not acted upon.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        EXPIRED = "expired", "Expired"
+        CANCELLED = "cancelled", "Cancelled"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="join_requests",
+    )
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.CASCADE,
+        related_name="join_requests",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    # Optional message from the user explaining why they want to join
+    message = models.TextField(blank=True, max_length=500)
+
+    # Tracking who processed the request
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reviewed_join_requests",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True, max_length=500)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField(default=None, null=True, blank=True)
+
+    class Meta:
+        db_table = "organization_join_requests"
+        # Only one pending request per user+org
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "organization"],
+                condition=models.Q(status="pending"),
+                name="unique_pending_join_request",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["organization", "status"]),
+            models.Index(fields=["user", "status"]),
+            models.Index(fields=["status", "created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"JoinRequest(user={self.user_id}, org={self.organization_id}, "
+            f"status={self.status})"
+        )
+
+    def save(self, *args, **kwargs):
+        # Set expiry on creation (30 days)
+        if not self.pk and not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(days=30)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_expired(self) -> bool:
+        if self.expires_at is None:
+            return False
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_pending(self) -> bool:
+        return self.status == self.Status.PENDING and not self.is_expired
+
+
+# ---------------------------------------------------------------------------
 # Invitation expiry callable — module-level so it is picklable for migrations.
 # ---------------------------------------------------------------------------
 

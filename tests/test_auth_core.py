@@ -138,10 +138,9 @@ class TestSignupView:
         # Verify email verification token was created
         assert EmailVerificationToken.objects.filter(user=user).exists()
 
-        # Verify organization was created
-        membership = OrganizationMember.objects.filter(user=user).first()
-        assert membership is not None
-        assert membership.role == OrganizationMember.Role.OWNER
+        # Signup no longer creates an organization — org creation is deferred
+        # to the post-signup onboarding flow (POST /api/v1/orgs/check-or-create/)
+        assert not OrganizationMember.objects.filter(user=user).exists()
 
     def test_signup_duplicate_email(self, api_client: APIClient, user: User) -> None:
         """Signup with existing email returns 422."""
