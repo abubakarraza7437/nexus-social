@@ -4,7 +4,7 @@ Publisher — Admin Configuration
 Registers Post and Schedule models for the Django admin interface.
 """
 from django.contrib import admin
-from apps.publisher.models import Post
+from apps.posts.models import Post
 
 
 @admin.register(Post)
