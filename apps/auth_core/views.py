@@ -151,11 +151,10 @@ class ForgotPasswordView(APIView):
             return Response(
                 {
                     "detail": (
-                        "If that email is registered, "
-                        "you will receive a reset link."
+                        "User with this email does not exists."
                     )
                 },
-                status=status.HTTP_200_OK,
+                status=status.HTTP_404_NOT_FOUND
             )
 
         # Invalidate any prior unused tokens.
