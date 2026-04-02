@@ -447,9 +447,9 @@ class TestForgotPasswordView:
 
         response = api_client.post(self.url, payload, format="json")
 
-        # Should return 200 to avoid leaking whether email exists
-        assert response.status_code == status.HTTP_200_OK
-        assert "If that email is registered" in response.data["detail"]
+        # Should return 404
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert "User with this email does not exists" in response.data["detail"]
 
     def test_forgot_password_inactive_user(self, api_client: APIClient, db) -> None:
         """Forgot password for inactive user returns 200 (no leak)."""
@@ -463,8 +463,8 @@ class TestForgotPasswordView:
 
         response = api_client.post(self.url, payload, format="json")
 
-        # Should return 200 to avoid leaking user status
-        assert response.status_code == status.HTTP_200_OK
+        # Should return 404
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
         # No token should be created for inactive user
         assert not PasswordResetToken.objects.filter(user=inactive_user).exists()
