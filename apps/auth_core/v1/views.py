@@ -23,7 +23,8 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from ..services import create_user, send_password_reset_email
+from .. import services as auth_services
+from ..services import create_user
 from ..throttling import AuthRateThrottle, ResendVerificationThrottle
 from .serializers import (
     ForgotPasswordSerializer,
@@ -111,8 +112,8 @@ class LogoutView(APIView):
 
 class ForgotPasswordView(APIView):
     """
-    Initiate a password-reset flow. Always returns 200 to avoid leaking
-    whether an email address is registered.
+    Initiate a password-reset flow. Returns 404 if the user does not exist
+    or is inactive.
 
     POST /api/v1/auth/forgot-password/
     Body: { email }
@@ -134,13 +135,13 @@ class ForgotPasswordView(APIView):
             user = User.objects.get(email=email, is_active=True)
         except User.DoesNotExist:
             return Response(
-                {"detail": "If that email is registered, you will receive a reset link."},
-                status=status.HTTP_200_OK,
+                {"detail": "User with this email does not exists."},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         user.password_reset_tokens.filter(is_used=False).update(is_used=True)
         reset_token = PasswordResetToken.objects.create(user=user)
-        send_password_reset_email(user, reset_token.token)
+        auth_services.send_password_reset_email(user, reset_token.token)
 
         return Response(
             {"detail": "If that email is registered, you will receive a reset link."},
