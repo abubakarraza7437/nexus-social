@@ -409,6 +409,7 @@ CORS_ALLOW_HEADERS = [
 # ---------------------------------------------------------------------------
 # django-axes — Brute Force Protection
 # ---------------------------------------------------------------------------
+AXES_ENABLED = True              # Must be explicit — axes/middleware.py reads this directly
 AXES_FAILURE_LIMIT = 5           # Lock after 5 failed login attempts
 AXES_COOLOFF_TIME = timedelta(hours=1)
 AXES_RESET_ON_SUCCESS = True     # Unlock on successful login
