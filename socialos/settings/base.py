@@ -416,6 +416,7 @@ AXES_RESET_ON_SUCCESS = True     # Unlock on successful login
 AXES_LOCKOUT_PARAMETERS = ["ip_address", "username"]
 AXES_USERNAME_FORM_FIELD = "email"
 AXES_ENABLE_ADMIN = True
+AXES_CLIENT_IP_CALLABLE = True
 
 # ---------------------------------------------------------------------------
 # Celery — Task Queue
