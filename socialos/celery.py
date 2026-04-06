@@ -43,7 +43,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "socialos.settings.development")
 # Must be called before creating the Celery app when CELERY_RESULT_BACKEND is
 # "django-db".  Without this, the backend tries to import django_celery_results
 # models before Django's app registry is initialised, causing AppRegistryNotReady.
-# django.setup() is idempotent — safe to call even if Django is already set up.
+# This is safe because celery.py is no longer imported from socialos/__init__.py
+# (which would cause a nested-setup race); instead wsgi.py / asgi.py import it
+# explicitly after Django is fully set up.
 django.setup()
 
 app = Celery("socialos")
