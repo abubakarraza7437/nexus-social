@@ -231,3 +231,57 @@ def send_invitation_email(to_email: str, org, token: str) -> None:
         f"This invitation expires in 7 days."
     )
     _send_email(to_email, f"You're invited to {org.name}", html, text)
+
+
+def send_org_deleted_email(user, org_name: str) -> bool:
+    """Notify member that their organization was deleted."""
+    html = (
+        f"<p>Hi {user.name or user.email},</p>"
+        f"<p>The organization <strong>{org_name}</strong> has been deleted by its owner.</p>"
+        f"<p>You are no longer a member of this organization.</p>"
+    )
+    text = (
+        f"Hi {user.name or user.email},\n\n"
+        f"The organization {org_name} has been deleted by its owner.\n"
+        f"You are no longer a member of this organization."
+    )
+    try:
+        from django.core.mail import send_mail
+        from django.conf import settings
+        send_mail(
+            subject=f"Organization {org_name} deleted",
+            message=text,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            html_message=html,
+            fail_silently=False,
+        )
+        return True
+    except Exception:
+        return False
+
+
+def send_member_left_email(owner_email: str, member_name: str, org_name: str) -> bool:
+    """Notify owner that a member has left the organization."""
+    html = (
+        f"<p>Hi,</p>"
+        f"<p>The member <strong>{member_name}</strong> has left your organization <strong>{org_name}</strong>.</p>"
+    )
+    text = (
+        f"Hi,\n\n"
+        f"The member {member_name} has left your organization {org_name}."
+    )
+    try:
+        from django.core.mail import send_mail
+        from django.conf import settings
+        send_mail(
+            subject=f"Member left {org_name}",
+            message=text,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[owner_email],
+            html_message=html,
+            fail_silently=False,
+        )
+        return True
+    except Exception:
+        return False

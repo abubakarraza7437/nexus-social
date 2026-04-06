@@ -13,6 +13,7 @@ from .views import (
     ResetPasswordView,
     SignupView,
     VerifyEmailView,
+    DeleteAccountView,
 )
 
 app_name = "auth"
@@ -26,4 +27,5 @@ urlpatterns = [
     path("reset-password/", ResetPasswordView.as_view(), name="reset_password"),
     path("verify-email/", VerifyEmailView.as_view(), name="verify_email"),
     path("resend-verification/", ResendVerificationEmailView.as_view(), name="resend_verification"),
+    path("delete-account/", DeleteAccountView.as_view(), name="delete_account"),
 ]

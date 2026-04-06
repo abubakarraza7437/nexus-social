@@ -31,6 +31,7 @@ from .serializers import (
     LogoutSerializer,
     ResetPasswordSerializer,
     SignupSerializer,
+    DeleteAccountSerializer,
 )
 
 
@@ -301,3 +302,123 @@ class ResendVerificationEmailView(APIView):
         send_verification_email(user, new_token.token)
 
         return _SAFE_RESPONSE
+
+
+class DeleteAccountView(APIView):
+    """
+    Delete the authenticated user's account.
+
+    If the user is an owner of any organization, that organization is marked
+    inactive, and other members are notified.
+    If the user is a member of an organization, the owners are notified.
+
+    DELETE /api/v1/auth/delete-account/
+    Returns 204 on success.
+    """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = DeleteAccountSerializer
+
+    def delete(self, request):
+        from django.contrib.auth import get_user_model
+        from apps.organizations.models import OrganizationMember
+        from ..services import send_org_deleted_email, send_member_left_email
+        from django_tenants.utils import schema_context
+        from apps.organizations.models import Organization
+        from django.db import connection, transaction
+
+        User = get_user_model()
+        user_obj = request.user
+
+        if not user_obj or not user_obj.is_authenticated:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            user = User.objects.get(id=user_obj.id)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        user_id = user.id
+
+        def _delete_user_manually(uid):
+            from apps.auth_core.models import EmailVerificationToken, PasswordResetToken
+            from apps.organizations.models import JoinRequest, OrganizationInvitation, OrganizationMember
+            from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+            from django.contrib.admin.models import LogEntry
+
+            # Nullify foreign keys pointing to this user
+            OrganizationMember.objects.filter(invited_by_id=uid).update(invited_by=None)
+            OrganizationInvitation.objects.filter(invited_by_id=uid).update(invited_by=None)
+            JoinRequest.objects.filter(reviewed_by_id=uid).update(reviewed_by=None)
+
+            # Clear references in ALL tenant schemas BEFORE deleting user
+            for t in Organization.objects.all():
+                with schema_context(t.schema_name):
+                    try:
+                        with transaction.atomic():
+                            # Use raw SQL to clear author_id to avoid "posts" relation error
+                            with connection.cursor() as cursor:
+                                cursor.execute("UPDATE posts SET author_id = NULL WHERE author_id = %s", [str(uid)])
+                    except Exception:
+                        pass
+
+            # Switch to a known safe schema (public)
+            connection.set_schema_to_public()
+
+            # Delete child objects referencing this user
+            JoinRequest.objects.filter(user_id=uid).delete()
+            OutstandingToken.objects.filter(user_id=uid).delete()
+            EmailVerificationToken.objects.filter(user_id=uid).delete()
+            PasswordResetToken.objects.filter(user_id=uid).delete()
+            OrganizationMember.objects.filter(user_id=uid).delete()
+            LogEntry.objects.filter(user_id=uid).delete()
+
+            # Now raw SQL delete the user
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM users WHERE id = %s", [str(uid)])
+
+        # Find organizations where this user is an owner
+        owned_memberships = list(OrganizationMember.objects.filter(
+            user=user, role=OrganizationMember.Role.OWNER
+        ).select_related("organization"))
+
+        for membership in owned_memberships:
+            org = membership.organization
+            org_name = org.name
+
+            # Find all members except the owner
+            other_memberships = list(OrganizationMember.objects.filter(
+                organization=org
+            ).exclude(user=user).select_related("user"))
+
+            for other_mem in other_memberships:
+                member_user = other_mem.user
+                # Send email that organization is marked inactive/deleted
+                send_org_deleted_email(member_user, org_name)
+                # We do not delete the members' accounts or their memberships
+
+            # Soft delete the organization by setting it to inactive
+            org.is_active = False
+            org.save(update_fields=["is_active"])
+
+        # Notify owners of organizations where the user is just a member
+        other_memberships_of_user = list(OrganizationMember.objects.filter(
+            user=user
+        ).exclude(role=OrganizationMember.Role.OWNER).select_related("organization"))
+
+        for membership in other_memberships_of_user:
+            org = membership.organization
+            org_name = org.name
+
+            owners = OrganizationMember.objects.filter(
+                organization=org, role=OrganizationMember.Role.OWNER
+            ).select_related("user")
+
+            member_display_name = user.name or user.email
+            for owner_mem in owners:
+                send_member_left_email(owner_mem.user.email, member_display_name, org_name)
+
+        # Delete the main user account using the manual helper
+        _delete_user_manually(user_id)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

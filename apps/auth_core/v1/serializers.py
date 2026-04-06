@@ -94,3 +94,9 @@ class LogoutSerializer(serializers.Serializer):
     """Accept a refresh token for blacklisting."""
 
     refresh = serializers.CharField()
+
+
+class DeleteAccountSerializer(serializers.Serializer):
+    """Placeholder for delete-account endpoint (no body required)."""
+
+    pass
