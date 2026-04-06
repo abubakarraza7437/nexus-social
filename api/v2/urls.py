@@ -1,41 +1,33 @@
 """
-API v2 — URL Dispatcher
+API v2 — Central Router
 ========================
-Entry point for all v2 traffic.  Mounted at ``/api/v2/`` in ``socialos/urls.py``.
-
-v2 Strategy
------------
-Only endpoints that have meaningful changes are overridden in v2-specific
-modules.  All other endpoints fall back to the same app-level URL modules
-used by v1 — so clients get the latest behaviour without duplication.
+Pure routing — no views or serializers live here.
+Each app owns its own v2/ subpackage with views, serializers, and urls.
 
 Override vs. fall-through table
---------------------------------
-  Endpoint group    | v2 override?  | Change summary
-  ------------------|---------------|--------------------------------------------------
-  auth/             | YES           | Login embeds user profile; signup returns user
-  orgs/             | YES           | Orgs include member_count; members include invited_by
-  social-accounts/  | no            | Unchanged — routes to v1 app module
-  posts/            | no            | Unchanged
-  analytics/        | no            | Unchanged
-  inbox/            | no            | Unchanged
-  ai/               | no            | Unchanged
-  automation/       | no            | Unchanged
+---------------------------------
+  App               | v2 subpackage? | Notes
+  ------------------|----------------|----------------------------------------------
+  auth_core         | YES            | Login/signup return user profile object
+  organizations     | YES            | Orgs+members enriched; /stats/ endpoint added
+  social-accounts   | no (fall-thru) | Stub — implement v2 in apps/social_accounts/v2/
+  content           | no (fall-thru) | Stub
+  analytics         | no (fall-thru) | Stub
+  inbox             | no (fall-thru) | Stub
+  ai_engine         | no (fall-thru) | Stub
+  automation        | no (fall-thru) | Stub
 
-For future v3 work: add a new ``api/v3/`` package and repeat the pattern.
+Fall-through apps use namespace prefix "v2_*" to prevent collision with v1.
+Mounted at /api/v2/ in socialos/urls.py.
 """
 from django.urls import include, path
 
 urlpatterns = [
-    # -------------------------------------------------------------------------
-    # v2-specific overrides
-    # -------------------------------------------------------------------------
-    path("auth/", include("api.v2.auth.urls")),
-    path("orgs/", include("api.v2.organizations.urls")),
+    # Implemented apps — v2 subpackages
+    path("auth/", include("apps.auth_core.v2.urls", namespace="auth_v2")),
+    path("orgs/", include("apps.organizations.v2.urls", namespace="organizations_v2")),
 
-    # -------------------------------------------------------------------------
-    # Fall-through to v1 app modules (no changes in v2)
-    # -------------------------------------------------------------------------
+    # Stub apps — fall through to the same urls.py as v1
     path("social-accounts/", include("apps.social_accounts.urls", namespace="v2_social_accounts")),
     path("posts/", include("apps.content.urls", namespace="v2_content")),
     path("analytics/", include("apps.analytics.urls", namespace="v2_analytics")),
