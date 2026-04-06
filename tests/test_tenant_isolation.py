@@ -6,7 +6,7 @@ Covers three properties:
   2. Query filtering              — DB queries are scoped to the requesting user's orgs
   3. Middleware tenant attachment — TenantIsolationMiddleware sets app.current_org_id
 """
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
 from django.contrib.auth import get_user_model
