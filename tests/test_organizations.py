@@ -214,7 +214,7 @@ class TestInviteView:
         url = f"/api/v1/orgs/{organization.id}/invite/"
         payload = {"email": "newmember@example.com", "role": "member"}
 
-        with patch("apps.organizations.views.send_invitation_email"):
+        with patch("apps.auth_core.services.send_invitation_email"):
             response = authenticated_client.post(url, payload, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
@@ -235,7 +235,7 @@ class TestInviteView:
         url = f"/api/v1/orgs/{organization.id}/invite/"
         payload = {"email": "newmember@example.com", "role": "member"}
 
-        with patch("apps.organizations.views.send_invitation_email"):
+        with patch("apps.auth_core.services.send_invitation_email"):
             response = api_client.post(url, payload, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED

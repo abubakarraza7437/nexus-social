@@ -304,6 +304,16 @@ REST_FRAMEWORK = {
     ],
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%SZ",
     "DATE_FORMAT": "%Y-%m-%d",
+    # ---------------------------------------------------------------------------
+    # URL-path versioning (/api/v1/..., /api/v2/...)
+    # DRF reads the version from the URL and exposes it as request.version.
+    # Views can branch on request.version when v1/v2 behaviour diverges.
+    # NotAcceptable (406) is raised for unrecognised versions automatically.
+    # ---------------------------------------------------------------------------
+    "DEFAULT_VERSIONING_CLASS": "api.versioning.SocialOSVersioning",
+    "DEFAULT_VERSION": "v1",
+    "ALLOWED_VERSIONS": ["v1", "v2"],
+    "VERSION_PARAM": "version",
 }
 
 # ---------------------------------------------------------------------------
@@ -348,11 +358,19 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": (
         "Production-grade social media management platform API. "
         "Supports scheduling, publishing, analytics, inbox, and AI features "
-        "across Facebook, Instagram, Twitter/X, and LinkedIn."
+        "across Facebook, Instagram, Twitter/X, and LinkedIn.\n\n"
+        "**Versioned endpoints:**\n"
+        "- `/api/v1/` — stable release\n"
+        "- `/api/v2/` — enhanced payloads, new endpoints\n\n"
+        "Use the version-specific Swagger UIs for focused exploration:\n"
+        "`/api/docs/v1/` and `/api/docs/v2/`"
     ),
+    # Default version shown when the combined schema is rendered.
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    "SCHEMA_PATH_PREFIX": r"/api/v1/",
+    # Match both /api/v1/ and /api/v2/ so drf-spectacular strips the prefix
+    # cleanly from operation IDs in the combined schema.
+    "SCHEMA_PATH_PREFIX": r"/api/v[12]/",
     "COMPONENT_SPLIT_REQUEST": True,
     "SORT_OPERATIONS": False,
     "SWAGGER_UI_SETTINGS": {
@@ -361,6 +379,8 @@ SPECTACULAR_SETTINGS = {
         "displayOperationId": True,
     },
     "SECURITY": [{"Bearer": []}],
+    # Default preprocessing hooks — overridden per-version in socialos/urls.py
+    # via SpectacularAPIView.as_view(custom_settings={...}).
     "PREPROCESSING_HOOKS": [],
 }
 

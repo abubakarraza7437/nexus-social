@@ -1,28 +1,7 @@
 """
-Auth Core — URL patterns.
+Auth Core — URLs (backward-compat shim)
+========================================
+Canonical location is now apps/auth_core/v1/urls.py.
+This module re-exports app_name and urlpatterns from v1.
 """
-from django.urls import path
-
-from .views import (
-    ForgotPasswordView,
-    LoginView,
-    LogoutView,
-    RefreshView,
-    ResendVerificationEmailView,
-    ResetPasswordView,
-    SignupView,
-    VerifyEmailView,
-)
-
-app_name = "auth"
-
-urlpatterns = [
-    path("signup/", SignupView.as_view(), name="signup"),
-    path("login/", LoginView.as_view(), name="login"),
-    path("refresh/", RefreshView.as_view(), name="token_refresh"),
-    path("logout/", LogoutView.as_view(), name="logout"),
-    path("forgot-password/", ForgotPasswordView.as_view(), name="forgot_password"),
-    path("reset-password/", ResetPasswordView.as_view(), name="reset_password"),
-    path("verify-email/", VerifyEmailView.as_view(), name="verify_email"),
-    path("resend-verification/", ResendVerificationEmailView.as_view(), name="resend_verification"),
-]
+from .v1.urls import app_name, urlpatterns  # noqa: F401
