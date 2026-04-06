@@ -10,7 +10,7 @@ which reads from a .env file or the process environment.
 from datetime import timedelta
 from pathlib import Path
 
-from decouple import Csv, config
+from decouple import Csv, config, UndefinedValueError
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -19,10 +19,30 @@ from decouple import Csv, config
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # ---------------------------------------------------------------------------
-# Security
+# Environment & Security
 # ---------------------------------------------------------------------------
+ENVIRONMENT: str = config("ENVIRONMENT", default="development").lower()
+ENV_PREFIX = "PROD_" if ENVIRONMENT == "production" else ("STAG_" if ENVIRONMENT == "staging" else "")
+
+
+def env_var(name: str, default=None, cast=None):
+    try:
+        key = f"{ENV_PREFIX}{name}" if ENV_PREFIX else name
+
+        if cast is not None:
+            return config(key, cast=cast)
+        return config(key)
+
+    except UndefinedValueError:
+        if cast is not None:
+            return config(name, default=default, cast=cast)
+        return config(name, default=default)
+
+
 SECRET_KEY: str = config("DJANGO_SECRET_KEY")
-DEBUG: bool = config("DEBUG", default=False, cast=bool)
+DEBUG: bool = env_var("DEBUG", default=False, cast=bool)
+if ENVIRONMENT == "production":
+    DEBUG = False
 ALLOWED_HOSTS: list[str] = config("ALLOWED_HOSTS", default="", cast=Csv())
 
 # ---------------------------------------------------------------------------
@@ -69,6 +89,7 @@ TENANT_APPS = [
     "apps.content.apps.ContentConfig",
     "apps.scheduler.apps.SchedulerConfig",
     "apps.publisher.apps.PublisherConfig",
+    "apps.posts.apps.PostsConfig",
     "apps.analytics.apps.AnalyticsConfig",
     "apps.inbox.apps.InboxConfig",
     "apps.ai_engine.apps.AIEngineConfig",
@@ -143,18 +164,25 @@ WSGI_APPLICATION = "socialos.wsgi.application"
 # ---------------------------------------------------------------------------
 # Database — PostgreSQL 16
 # ---------------------------------------------------------------------------
+ENGINE = env_var("SQL_ENGINE", "django_tenants.postgresql_backend")
+NAME = env_var("DB_NAME", default="socialos")
+USER = env_var("DB_USER", default="socialos")
+PASSWORD = env_var("DB_PASSWORD", default="socialos")
+HOST = env_var("DB_HOST", default="localhost")
+PORT = env_var("DB_PORT", default="5432")
+
 DATABASES = {
     "default": {
         # django-tenants requires its own backend wrapper (wraps psycopg2).
-        "ENGINE": "django_tenants.postgresql_backend",
-        "NAME": config("DB_NAME", default="socialos"),
-        "USER": config("DB_USER", default="socialos"),
-        "PASSWORD": config("DB_PASSWORD", default="socialos"),
-        "HOST": config("DB_HOST", default="localhost"),
-        "PORT": config("DB_PORT", default="5432"),
+        "ENGINE": ENGINE,
+        "NAME": NAME,
+        "USER": USER,
+        "PASSWORD": PASSWORD,
+        "HOST": HOST,
+        "PORT": PORT,
         # Persistent connections — avoids TCP handshake overhead.
         # Set to 0 in PgBouncer (transaction-mode) environments.
-        "CONN_MAX_AGE": config("DB_CONN_MAX_AGE", default=60, cast=int),
+        "CONN_MAX_AGE": env_var("DB_CONN_MAX_AGE", default=60, cast=int),
         "CONN_HEALTH_CHECKS": True,
         "OPTIONS": {
             "connect_timeout": 10,
@@ -162,7 +190,7 @@ DATABASES = {
             "options": "-c statement_timeout=30000",  # 30 s
         },
         "TEST": {
-            "NAME": config("TEST_DB_NAME", default="test_socialos"),
+            "NAME": env_var("TEST_DB_NAME", default="test_socialos"),
         },
     }
 }
@@ -202,7 +230,7 @@ AUTH_PASSWORD_VALIDATORS = [
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": config("REDIS_CACHE_URL", default="redis://localhost:6379/1"),
+        "LOCATION": env_var("REDIS_CACHE_URL", default="redis://localhost:6379/1"),
         "KEY_PREFIX": "socialos",
         "TIMEOUT": 300,  # 5 minutes default TTL
         "OPTIONS": {
@@ -230,7 +258,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [config("REDIS_CHANNEL_URL", default="redis://localhost:6379/2")],
+            "hosts": [env_var("REDIS_CHANNEL_URL", default="redis://localhost:6379/2")],
             "capacity": 1500,     # Max messages in-flight per channel group
             "expiry": 10,         # Message TTL (seconds)
         },
@@ -391,7 +419,7 @@ AXES_ENABLE_ADMIN = True
 # ---------------------------------------------------------------------------
 # Celery — Task Queue
 # ---------------------------------------------------------------------------
-CELERY_BROKER_URL: str = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+CELERY_BROKER_URL: str = env_var("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = "django-db"   # Persisted results via django-celery-results
 CELERY_CACHE_BACKEND = "default"
 
@@ -513,22 +541,22 @@ ANTHROPIC_API_KEY: str = config("ANTHROPIC_API_KEY", default="")
 # ---------------------------------------------------------------------------
 # Stripe (Billing)
 # ---------------------------------------------------------------------------
-STRIPE_SECRET_KEY: str = config("STRIPE_SECRET_KEY", default="")
-STRIPE_PUBLISHABLE_KEY: str = config("STRIPE_PUBLISHABLE_KEY", default="")
-STRIPE_WEBHOOK_SECRET: str = config("STRIPE_WEBHOOK_SECRET", default="")
+STRIPE_SECRET_KEY: str = env_var("STRIPE_SECRET_KEY", default="")
+STRIPE_PUBLISHABLE_KEY: str = env_var("STRIPE_PUBLISHABLE_KEY", default="")
+STRIPE_WEBHOOK_SECRET: str = env_var("STRIPE_WEBHOOK_SECRET", default="")
 
 # ---------------------------------------------------------------------------
 # Sentry (Error Tracking)
 # ---------------------------------------------------------------------------
-SENTRY_DSN: str = config("SENTRY_DSN", default="")
-SENTRY_ENVIRONMENT: str = config("SENTRY_ENVIRONMENT", default="development")
+SENTRY_DSN: str = env_var("SENTRY_DSN", default="")
+SENTRY_ENVIRONMENT: str = env_var("SENTRY_ENVIRONMENT", default="development")
 
 # ---------------------------------------------------------------------------
 # Kafka / Redis Streams Event Bus
 # ---------------------------------------------------------------------------
-USE_KAFKA: bool = config("USE_KAFKA", default=False, cast=bool)
-KAFKA_BOOTSTRAP_SERVERS: str = config("KAFKA_BOOTSTRAP_SERVERS", default="localhost:9092")
-KAFKA_SECURITY_PROTOCOL: str = config("KAFKA_SECURITY_PROTOCOL", default="PLAINTEXT")
+USE_KAFKA: bool = env_var("USE_KAFKA", default=False, cast=bool)
+KAFKA_BOOTSTRAP_SERVERS: str = env_var("KAFKA_BOOTSTRAP_SERVERS", default="localhost:9092")
+KAFKA_SECURITY_PROTOCOL: str = env_var("KAFKA_SECURITY_PROTOCOL", default="PLAINTEXT")
 
 # ---------------------------------------------------------------------------
 # Plan Limits (enforced at request time via OrgPlanThrottle + plan_limits JSON)

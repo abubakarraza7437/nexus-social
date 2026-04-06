@@ -1,0 +1,1 @@
+"""Posts — URL patterns (stub)."""
