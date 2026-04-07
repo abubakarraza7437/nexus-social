@@ -63,3 +63,6 @@ confluent-kafka>=2.4,<3.0
 # AI Clients
 openai>=1.30,<2.0
 anthropic>=0.29,<1.0
+
+# Admin Panel
+django-jazzmin>=3.0.4
