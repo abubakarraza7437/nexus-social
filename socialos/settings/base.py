@@ -99,7 +99,7 @@ TENANT_APPS = [
 ]
 
 # django-tenants requires the union; deduplicate without losing order.
-INSTALLED_APPS = list(SHARED_APPS) + [
+INSTALLED_APPS = ['jazzmin'] + list(SHARED_APPS) + [
     app for app in TENANT_APPS if app not in SHARED_APPS
 ]
 
@@ -684,4 +684,38 @@ LOGGING = {
             "propagate": False,
         },
     },
+}
+
+# ---------------------------------------------------------------------------
+# Jazzmin
+# ---------------------------------------------------------------------------
+JAZZMIN_SETTINGS = {
+    "site_title": "SocialOS Admin",
+
+    # Title on the login screen (19 chars max) (defaults to current_admin_site.site_header if absent or None)
+    "site_header": "SocialOS",
+
+    # Title on the brand (19 chars max) (defaults to current_admin_site.site_header if absent or None)
+    "site_brand": "SocialOS",
+
+    # Logo to use for your site, must be present in static files, used for brand on top left
+    # "site_logo": "books/img/logo.png",
+
+    # Logo to use for your site, must be present in static files, used for login form logo (defaults to site_logo)
+    # "login_logo": None,
+
+    # Logo to use for login form in dark themes (defaults to login_logo)
+    # "login_logo_dark": None,
+
+    # CSS classes that are applied to the logo above
+    # "site_logo_classes": "img-circle",
+
+    # Relative path to a favicon for your site, will default to site_logo if absent (ideally 32x32 px)
+    # "site_icon": None,
+
+    # Welcome text on the login screen
+    "welcome_sign": "Welcome to the SocialOS",
+
+    # Copyright on the footer
+    "copyright": "SocialOS Ltd",
 }
