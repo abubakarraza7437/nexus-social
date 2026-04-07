@@ -100,7 +100,7 @@ TENANT_APPS = [
 ]
 
 # django-tenants requires the union; deduplicate without losing order.
-INSTALLED_APPS = ['jazzmin'] + list(SHARED_APPS) + [
+INSTALLED_APPS = list(SHARED_APPS) + [
     app for app in TENANT_APPS if app not in SHARED_APPS
 ]
 
