@@ -25,6 +25,7 @@ Verify a worker is running
 import logging
 import os
 import socket
+import random
 
 import django
 from celery import Celery
@@ -241,3 +242,26 @@ def debug_task(self) -> None:
         self.request.args,
         self.request.kwargs,
     )
+
+
+def simulate_flaky_work():
+    """
+    Does the actual work for flaky_task.
+    50% chance to fail.
+    """
+    if random.random() < 0.5:
+        raise ValueError("Intentional failure for testing retries")
+    return "Success!"
+
+
+@app.task(bind=True, max_retries=3, default_retry_delay=5)
+def flaky_task(self):
+    """
+    Task that retries on failure and shows retries in Flower.
+    """
+    try:
+        # call helper function
+        return simulate_flaky_work()
+    except Exception as exc:
+        # This triggers a retry, counted in Flower
+        raise self.retry(exc=exc)
