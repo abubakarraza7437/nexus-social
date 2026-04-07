@@ -19,6 +19,10 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "socialos.settings.development")
 # Initialise Django BEFORE importing Channels routing (avoids AppRegistryNotReady).
 django_asgi_app = get_asgi_application()
 
+# Import the Celery app after Django is fully set up so that @shared_task tasks
+# can be dispatched from Django views with the correct broker configuration.
+import socialos.celery  # noqa: F401, E402
+
 from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
 from channels.security.websocket import AllowedHostsOriginValidator  # noqa: E402
 

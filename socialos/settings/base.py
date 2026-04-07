@@ -423,7 +423,11 @@ CELERY_BROKER_URL: str = env_var("CELERY_BROKER_URL", default="redis://localhost
 CELERY_RESULT_BACKEND = "django-db"   # Persisted results via django-celery-results
 CELERY_CACHE_BACKEND = "default"
 
-# Serialization
+# Broker reliability — required in Celery ≥ 5.3; will error in Celery 6.x if absent.
+# Tells Celery to retry the initial broker connection instead of raising immediately.
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# Serialization — JSON only; reject tasks using pickle/yaml to prevent RCE.
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -435,16 +439,17 @@ CELERY_ENABLE_UTC = True
 # Reliability
 CELERY_TASK_ACKS_LATE = True             # Acknowledge after completion, not on receipt
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
-CELERY_WORKER_PREFETCH_MULTIPLIER = 1       # Fetch one task at a time (fair distribution)
-CELERY_WORKER_MAX_TASKS_PER_CHILD = 500     # Recycle workers to prevent memory leaks
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1    # Fetch one task at a time (fair distribution)
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 500  # Recycle workers to prevent memory leaks
 
 # Timeouts
 CELERY_TASK_TIME_LIMIT = 30 * 60         # 30-minute hard kill
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60    # 25-minute soft limit (raises SoftTimeLimitExceeded)
 
-# Tracking
+# Tracking — enables Flower monitoring and celery inspect active
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_SEND_SENT_EVENT = True
+CELERY_WORKER_SEND_TASK_EVENTS = True    # Required for Flower real-time event stream
 
 # Beat scheduler (periodic tasks stored in DB, editable via admin)
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"

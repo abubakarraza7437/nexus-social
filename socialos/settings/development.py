@@ -89,6 +89,22 @@ REST_FRAMEWORK = {  # noqa: F405
 CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=False, cast=bool)  # noqa: F405
 
 # ---------------------------------------------------------------------------
+# Celery Beat — periodic task schedule (development only)
+# The healthcheck fires every 60 s so you can immediately confirm that the
+# worker is consuming and the result backend is writing.
+#
+# In production, periodic tasks are managed via the DB-backed beat scheduler
+# (editable in /admin/django_celery_beat/) — not hardcoded here.
+# ---------------------------------------------------------------------------
+CELERY_BEAT_SCHEDULE = {  # noqa: F405
+    "healthcheck-every-60s": {
+        "task": "socialos.healthcheck",
+        "schedule": 60.0,        # seconds
+        "options": {"queue": "default"},
+    },
+}
+
+# ---------------------------------------------------------------------------
 # Caching — local Redis or in-memory fallback
 # ---------------------------------------------------------------------------
 # Uncomment to use in-memory cache (no Redis required):
