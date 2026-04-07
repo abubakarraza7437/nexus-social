@@ -163,9 +163,11 @@ class EmailVerificationToken(models.Model):
 
     class Meta:
         db_table = "email_verification_tokens"
+        verbose_name = "Email Verification Token"
+        verbose_name_plural = "Email Verification Tokens"
         indexes = [
-            models.Index(fields=["token"]),            # primary lookup on verification
-            models.Index(fields=["user", "is_used"]),  # query pending tokens per user
+            models.Index(fields=["token"], name="email_ver_token_idx"),
+            models.Index(fields=["user", "is_used"], name="email_ver_user_used_idx"),
         ]
 
     def __str__(self) -> str:
@@ -209,9 +211,11 @@ class PasswordResetToken(models.Model):
 
     class Meta:
         db_table = "password_reset_tokens"
+        verbose_name = "Password Reset Token"
+        verbose_name_plural = "Password Reset Tokens"
         indexes = [
-            models.Index(fields=["token"]),
-            models.Index(fields=["user", "is_used"]),
+            models.Index(fields=["token"], name="pwd_reset_token_idx"),
+            models.Index(fields=["user", "is_used"], name="pwd_reset_user_used_idx"),
         ]
 
     def __str__(self) -> str:
