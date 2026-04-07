@@ -85,6 +85,9 @@ dev = [
 
     # Interactive shell
     "ipython>=8.0",
+
+    # Admin panel
+    "django-jazzmin>=3.0.4",
 ]
 
 [tool.hatch.build.targets.wheel]

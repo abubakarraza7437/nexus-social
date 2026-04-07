@@ -51,6 +51,7 @@ ALLOWED_HOSTS: list[str] = config("ALLOWED_HOSTS", default="", cast=Csv())
 # SHARED_APPS: tables created only in the public schema (users, orgs, tokens).
 # django_tenants must be first.
 SHARED_APPS = [
+    "jazzmin",
     "django_tenants",
 
     # Django built-ins (public schema)
@@ -99,7 +100,7 @@ TENANT_APPS = [
 ]
 
 # django-tenants requires the union; deduplicate without losing order.
-INSTALLED_APPS = ['jazzmin'] + list(SHARED_APPS) + [
+INSTALLED_APPS = list(SHARED_APPS) + [
     app for app in TENANT_APPS if app not in SHARED_APPS
 ]
 
