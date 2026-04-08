@@ -20,48 +20,10 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+
+from apps.publisher.schemas import PublishResult  # noqa: F401 — re-exported for callers
 
 logger = logging.getLogger(__name__)
-
-
-# --------------------------------------------------------------------------- #
-# Response                                                                     #
-# --------------------------------------------------------------------------- #
-
-@dataclass(frozen=True)
-class PublishResult:
-    """
-    Standardised return value from every publisher.
-
-    Attributes:
-        ok:           True on success, False on any failure.
-        remote_id:    Platform-assigned post ID (e.g. tweet ID, FB post ID).
-                      Empty string on failure.
-        message:      Human-readable description of what happened.
-        error_code:   Machine-readable failure code for retry/alerting logic.
-                      Empty string on success.
-        extra:        Any additional platform-specific metadata
-                      (e.g. permalink, media IDs). Never relied on by core logic.
-    """
-
-    ok: bool
-    remote_id: str = ""
-    message: str = ""
-    error_code: str = ""
-    extra: dict = field(default_factory=dict)
-
-    # ------------------------------------------------------------------ #
-    # Named constructors — prefer these over direct instantiation         #
-    # ------------------------------------------------------------------ #
-
-    @classmethod
-    def success(cls, remote_id: str, message: str = "Published.", **extra) -> PublishResult:
-        return cls(ok=True, remote_id=remote_id, message=message, extra=extra)
-
-    @classmethod
-    def failure(cls, error_code: str, message: str, **extra) -> PublishResult:
-        return cls(ok=False, error_code=error_code, message=message, extra=extra)
 
 
 # --------------------------------------------------------------------------- #

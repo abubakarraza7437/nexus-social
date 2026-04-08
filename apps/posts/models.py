@@ -16,7 +16,9 @@ Key design decisions
 import uuid
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from apps.organizations.models import Organization
+from apps.posts.schemas import PostTargetErrorPayload
 
 
 # TODO: Uncomment once the Content model is implemented in apps/content/models.py
@@ -127,7 +129,6 @@ class Post(models.Model):
         elif all(t == s.PUBLISHED for t in targets):
             self.status = self.Status.PUBLISHED
             if not self.published_at:
-                from django.utils import timezone
                 self.published_at = timezone.now()
         elif s.FAILED in targets:
             self.status = self.Status.FAILED
@@ -238,7 +239,6 @@ class PostTarget(models.Model):
 
     def mark_published(self, remote_post_id: str) -> None:
         """Convenience: mark this target published and propagate to Post."""
-        from django.utils import timezone
         self.status = self.Status.PUBLISHED
         self.remote_post_id = remote_post_id
         self.published_at = timezone.now()
@@ -248,8 +248,11 @@ class PostTarget(models.Model):
 
     def mark_failed(self, code: str, message: str) -> None:
         """Convenience: record a structured error and propagate to Post."""
-        from django.utils import timezone
         self.status = self.Status.FAILED
-        self.error = {"code": code, "message": message, "at": timezone.now().isoformat()}
+        self.error = PostTargetErrorPayload(
+            code=code,
+            message=message,
+            at=timezone.now(),
+        ).model_dump(mode="json")
         self.save(update_fields=["status", "error", "updated_at"])
         self.post.sync_status()

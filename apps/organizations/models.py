@@ -19,6 +19,8 @@ from django.db import models
 from django.utils import timezone
 from django_tenants.models import DomainMixin, TenantMixin
 
+from apps.organizations.schemas import PlanLimits
+
 
 # ---------------------------------------------------------------------------
 # Organization  (tenant model)
@@ -106,9 +108,14 @@ class Organization(TenantMixin):
     # (which in turn calls models.Model.save() and creates the schema).
     # ------------------------------------------------------------------
 
+    def get_plan_limits(self) -> PlanLimits:
+        """Return the current plan limits as a validated Pydantic model."""
+        return PlanLimits.model_validate(self.plan_limits)
+
     def save(self, *args, **kwargs) -> None:
         if not self.plan_limits or self._plan_changed():
-            self.plan_limits = settings.PLAN_LIMITS.get(self.plan, {})
+            raw = settings.PLAN_LIMITS.get(self.plan, {})
+            self.plan_limits = PlanLimits.model_validate(raw).model_dump(mode="json")
         super().save(*args, **kwargs)
 
     def _plan_changed(self) -> bool:
