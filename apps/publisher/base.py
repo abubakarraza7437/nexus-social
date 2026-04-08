@@ -137,6 +137,6 @@ class BasePublisher(ABC):
                 "platform": self.platform,
                 "post_target_id": post_target_id,
                 "error_code": error_code,
-                "message": message,
+                "error_msg": message,
             },
         )
