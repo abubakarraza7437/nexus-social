@@ -58,6 +58,7 @@ dependencies = [
     "anthropic>=0.29,<1.0",
     "django-tenants>=3.6,<4.0",
     "flake8-pyproject>=1.2.4",
+    "croniter>=3.0,<4.0",
 ]
 
 [project.optional-dependencies]
