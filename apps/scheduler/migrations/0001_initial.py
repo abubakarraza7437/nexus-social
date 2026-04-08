@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -21,24 +20,55 @@ class Migration(migrations.Migration):
             name='RecurringSchedule',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('title', models.CharField(help_text="Human-readable label, e.g. 'Monday morning motivational post'.", max_length=255)),
-                ('description', models.TextField(blank=True, help_text="Optional notes about this schedule's purpose.")),
-                ('cron_expression', models.CharField(help_text="Standard 5-field cron expression: minute hour day-of-month month day-of-week. Example: '0 9 * * 1' fires every Monday at 09:00 in the configured timezone.", max_length=100, validators=[apps.scheduler.models.validate_cron_expression])),
-                ('timezone', models.CharField(default='UTC', help_text="IANA timezone name for interpreting the cron expression, e.g. 'America/New_York'.", max_length=100, validators=[apps.scheduler.models.validate_timezone])),
-                ('is_active', models.BooleanField(db_index=True, default=True, help_text='Inactive schedules are skipped by the scheduler task.')),
-                ('next_run_at', models.DateTimeField(blank=True, help_text='Next UTC datetime when this schedule should fire. Set by refresh_next_run().', null=True)),
-                ('last_run_at', models.DateTimeField(blank=True, help_text='UTC datetime of the most recent successful run.', null=True)),
-                ('run_count', models.PositiveIntegerField(default=0, help_text='Total number of times this schedule has fired successfully.')),
-                ('end_at', models.DateTimeField(blank=True, help_text='If set, the schedule deactivates itself after this UTC datetime.', null=True)),
-                ('max_runs', models.PositiveIntegerField(blank=True, help_text='If set, the schedule deactivates itself after firing this many times total.', null=True)),
+                ('title', models.CharField(help_text="Human-readable label, e.g. 'Monday morning motivational post'.",
+                                           max_length=255)),
+                ('description',
+                 models.TextField(blank=True, help_text="Optional notes about this schedule's purpose.")),
+                ('cron_expression', models.CharField(
+                    help_text="Standard 5-field cron expression: minute hour day-of-month month day-of-week. Example: "
+                              "'0 9 * * 1' fires every Monday at 09:00 in the configured timezone.",
+                    max_length=100, validators=[apps.scheduler.models.validate_cron_expression])),
+                ('timezone', models.CharField(default='UTC',
+                                              help_text="IANA timezone name for interpreting the cron expression, e.g."
+                                                        " 'America/New_York'.",
+                                              max_length=100, validators=[apps.scheduler.models.validate_timezone])),
+                ('is_active', models.BooleanField(db_index=True, default=True,
+                                                  help_text='Inactive schedules are skipped by the scheduler task.')),
+                ('next_run_at', models.DateTimeField(blank=True,
+                                                     help_text='Next UTC datetime when this schedule should fire. '
+                                                               'Set by refresh_next_run().',
+                                                     null=True)),
+                ('last_run_at',
+                 models.DateTimeField(blank=True, help_text='UTC datetime of the most recent successful run.',
+                                      null=True)),
+                ('run_count', models.PositiveIntegerField(default=0,
+                                                          help_text='Total number of times this schedule has '
+                                                                    'fired successfully.')),
+                ('end_at', models.DateTimeField(blank=True,
+                                                help_text='If set, the schedule deactivates itself after '
+                                                          'this UTC datetime.',
+                                                null=True)),
+                ('max_runs', models.PositiveIntegerField(blank=True,
+                                                         help_text='If set, the schedule deactivates itself after '
+                                                                   'firing this many times total.',
+                                                         null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('created_by', models.ForeignKey(blank=True, help_text='User who created this schedule. Nullable so the org is not affected if the user account is deleted.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_recurring_schedules', to=settings.AUTH_USER_MODEL)),
-                ('organization', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='recurring_schedules', to='organizations.organization')),
+                ('created_by', models.ForeignKey(blank=True,
+                                                 help_text='User who created this schedule. Nullable so the org is not '
+                                                           'affected if the user account is deleted.',
+                                                 null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                                 related_name='created_recurring_schedules',
+                                                 to=settings.AUTH_USER_MODEL)),
+                ('organization',
+                 models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='recurring_schedules',
+                                   to='organizations.organization')),
             ],
             options={
                 'db_table': 'recurring_schedules',
-                'indexes': [models.Index(fields=['organization', 'is_active', 'next_run_at'], name='rs_org_active_next_run_idx'), models.Index(fields=['organization', 'created_at'], name='rs_org_created_at_idx')],
+                'indexes': [models.Index(fields=['organization', 'is_active', 'next_run_at'],
+                                         name='rs_org_active_next_run_idx'),
+                            models.Index(fields=['organization', 'created_at'], name='rs_org_created_at_idx')],
             },
         ),
     ]
