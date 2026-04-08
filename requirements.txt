@@ -20,6 +20,9 @@ channels>=4.1,<5.0
 channels-redis>=4.2,<5.0
 daphne>=4.1,<5.0
 
+# Scheduling
+croniter>=3.0,<4.0
+
 # Background Tasks
 celery[redis]>=5.3,<6.0
 django-celery-beat>=2.6,<3.0
