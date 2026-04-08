@@ -11,6 +11,7 @@ from django.db import models
 from django.utils import timezone
 from apps.posts.models import PostTarget
 from apps.organizations.models import Organization
+from apps.publisher.schemas import PublishErrorPayload, PublishSuccessPayload
 
 
 class PublishJob(models.Model):
@@ -123,18 +124,17 @@ class PublishJob(models.Model):
         self.started_at = timezone.now()
         self.save(update_fields=["status", "started_at", "updated_at"])
 
-    def mark_success(self, result: dict | None = None) -> None:
+    def mark_success(self, payload: PublishSuccessPayload) -> None:
         """
         Record a successful publish and propagate to PostTarget.
         """
         self.status = self.Status.SUCCESS
-        self.result = result or {}
+        self.result = payload.model_dump(mode="json")
         self.error = {}
         self.completed_at = timezone.now()
         self.save(update_fields=["status", "result", "error", "completed_at", "updated_at"])
 
-        remote_id = self.result.get("remote_post_id", "")
-        self.target.mark_published(remote_id)
+        self.target.mark_published(payload.remote_post_id)
 
     def mark_failed(
         self,
@@ -151,12 +151,12 @@ class PublishJob(models.Model):
         Otherwise propagates the failure to PostTarget.
         """
         self.status = self.Status.FAILED
-        self.error = {
-            "code": code,
-            "message": message,
-            "traceback": traceback,
-            "at": timezone.now().isoformat(),
-        }
+        self.error = PublishErrorPayload(
+            code=code,
+            message=message,
+            traceback=traceback,
+            at=timezone.now(),
+        ).model_dump(mode="json")
         self.completed_at = timezone.now()
 
         if schedule_retry and self.can_retry:
