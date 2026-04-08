@@ -125,26 +125,16 @@ class PublishJob(models.Model):
 
     def mark_success(self, result: dict | None = None) -> None:
         """
-        Record a successful publish.
-
-        Emits a 'publish_job.succeeded' event for the posts app to handle
-        (bounded context — we don't write to PostTarget directly).
+        Record a successful publish and propagate to PostTarget.
         """
-        from apps.publisher.events import emit_job_succeeded
-
         self.status = self.Status.SUCCESS
         self.result = result or {}
         self.error = {}
         self.completed_at = timezone.now()
         self.save(update_fields=["status", "result", "error", "completed_at", "updated_at"])
 
-        # Emit event for posts app to update PostTarget
         remote_id = self.result.get("remote_post_id", "")
-        emit_job_succeeded(
-            org_id=str(self.org_id),
-            target_id=str(self.target_id),
-            remote_post_id=remote_id,
-        )
+        self.target.mark_published(remote_id)
 
     def mark_failed(
         self,
@@ -158,10 +148,8 @@ class PublishJob(models.Model):
 
         If attempts remain and schedule_retry=True, computes exponential
         backoff and sets retry_at for the scheduler to re-enqueue.
-        Otherwise emits a 'publish_job.failed' event for the posts app.
+        Otherwise propagates the failure to PostTarget.
         """
-        from apps.publisher.events import emit_job_failed
-
         self.status = self.Status.FAILED
         self.error = {
             "code": code,
@@ -179,14 +167,8 @@ class PublishJob(models.Model):
 
         self.save(update_fields=["status", "error", "completed_at", "retry_at", "updated_at"])
 
-        # Emit event only if no more retries — posts app will mark PostTarget as failed
         if not (schedule_retry and self.can_retry):
-            emit_job_failed(
-                org_id=str(self.org_id),
-                target_id=str(self.target_id),
-                code=code,
-                message=message,
-            )
+            self.target.mark_failed(code=code, message=message)
 
     @property
     def can_retry(self) -> bool:
