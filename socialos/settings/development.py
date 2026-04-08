@@ -69,7 +69,7 @@ MIDDLEWARE = [  # noqa: F405
 
 SILKY_PYTHON_PROFILER = True
 SILKY_META = True
-SILKY_INTERCEPT_PERCENT = 100   # Profile all requests in dev
+SILKY_INTERCEPT_PERCENT = 100  # Profile all requests in dev
 
 # ---------------------------------------------------------------------------
 # DRF — Enable Browsable API in development
@@ -99,7 +99,7 @@ CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=False, cas
 CELERY_BEAT_SCHEDULE = {  # noqa: F405
     "healthcheck-every-60s": {
         "task": "socialos.healthcheck",
-        "schedule": 60.0,        # seconds
+        "schedule": 60.0,  # seconds
         "options": {"queue": "default"},
     },
 }
@@ -113,6 +113,6 @@ CELERY_BEAT_SCHEDULE = {  # noqa: F405
 # ---------------------------------------------------------------------------
 # Logging — verbose SQL + app logs in development
 # ---------------------------------------------------------------------------
-LOGGING["loggers"]["django.db.backends"]["level"] = "DEBUG"  # noqa: F405
+LOGGING["loggers"]["django.db.backends"]["level"] = "WARNING"  # noqa  # Set to DEBUG temporarily to trace SQL queries
 LOGGING["root"]["level"] = "DEBUG"  # noqa: F405
 LOGGING["loggers"]["apps"]["level"] = "DEBUG"  # noqa: F405
