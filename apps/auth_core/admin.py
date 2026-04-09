@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 
-from .models import User
+from .models import EmailVerificationToken, PasswordResetToken, User
 
 
 @admin.register(User)
@@ -28,3 +28,63 @@ class UserAdmin(BaseUserAdmin):
             "fields": ("email", "name", "password1", "password2"),
         }),
     )
+
+
+@admin.register(EmailVerificationToken)
+class EmailVerificationTokenAdmin(admin.ModelAdmin):
+    """Admin configuration for EmailVerificationToken model."""
+
+    list_display = ("id", "user", "is_used", "created_at", "expires_at", "is_valid_display")
+    list_filter = ("is_used", "created_at", "expires_at")
+    search_fields = ("user__email", "token")
+    readonly_fields = ("id", "token", "created_at")
+    ordering = ("-created_at",)
+    raw_id_fields = ("user",)
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        (_("Token Information"), {
+            "fields": ("id", "user", "token")
+        }),
+        (_("Status"), {
+            "fields": ("is_used", "expires_at")
+        }),
+        (_("Timestamps"), {
+            "fields": ("created_at",),
+            "classes": ("collapse",)
+        }),
+    )
+
+    @admin.display(boolean=True, description="Valid")
+    def is_valid_display(self, obj):
+        return obj.is_valid
+
+
+@admin.register(PasswordResetToken)
+class PasswordResetTokenAdmin(admin.ModelAdmin):
+    """Admin configuration for PasswordResetToken model."""
+
+    list_display = ("id", "user", "is_used", "created_at", "expires_at", "is_valid_display")
+    list_filter = ("is_used", "created_at", "expires_at")
+    search_fields = ("user__email", "token")
+    readonly_fields = ("id", "token", "created_at")
+    ordering = ("-created_at",)
+    raw_id_fields = ("user",)
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        (_("Token Information"), {
+            "fields": ("id", "user", "token")
+        }),
+        (_("Status"), {
+            "fields": ("is_used", "expires_at")
+        }),
+        (_("Timestamps"), {
+            "fields": ("created_at",),
+            "classes": ("collapse",)
+        }),
+    )
+
+    @admin.display(boolean=True, description="Valid")
+    def is_valid_display(self, obj):
+        return obj.is_valid
