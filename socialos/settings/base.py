@@ -454,6 +454,13 @@ CELERY_WORKER_SEND_TASK_EVENTS = True    # Required for Flower real-time event s
 
 # Beat scheduler (periodic tasks stored in DB, editable via admin)
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BEAT_SCHEDULE = {
+    "dispatch-due-posts-every-5min": {
+        "task": "apps.scheduler.tasks.dispatch_due_posts",
+        "schedule": 300.0,  # 5 minutes
+        "options": {"queue": "scheduler"},
+    },
+}
 
 # ---------------------------------------------------------------------------
 # Celery — Queue Routing
