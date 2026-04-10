@@ -35,7 +35,6 @@ def _unique_slug(base: str) -> str:
             return candidate
 
 
-
 @transaction.atomic
 def create_user(validated_data: dict) -> User:
 
