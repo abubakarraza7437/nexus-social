@@ -14,10 +14,7 @@ logger = get_task_logger(__name__)
 
 @shared_task(queue='scheduler')
 def dispatch_due_posts():
-    """
-    Runs every hour via Celery Beat.
-    Finds all posts where scheduled_at <= now and dispatches publish_post.
-    """
+
     now = timezone.now()
     dispatched = 0
 
@@ -29,7 +26,10 @@ def dispatch_due_posts():
             ).select_related('post')
 
             for target in due_targets:
-                publish_post.delay(str(target.pk), org.schema_name)
+                publish_post.apply_async(
+                    args=[str(target.pk), org.schema_name],
+                    task_id=f"publish-{target.pk}",
+                )
                 dispatched += 1
 
     logger.info(f"Dispatched {dispatched} posts for publishing")
