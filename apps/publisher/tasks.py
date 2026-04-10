@@ -1,9 +1,10 @@
-from celery import shared_task
+from celery import Task, shared_task
 from celery.utils.log import get_task_logger
 from django.db import transaction, IntegrityError
 from django_tenants.utils import schema_context
 
 from apps.posts.models import PostTarget
+from apps.publisher.base import ErrorCode
 from apps.publisher.models import PublishJob
 from apps.publisher.platforms.mock import MockPublisher
 from apps.publisher.schemas import PublishSuccessPayload
@@ -15,8 +16,47 @@ class RetryablePublishError(Exception):
     """Raised on a recoverable publish failure to trigger Celery's retry mechanism."""
 
 
+class PublisherTask(Task):
+    abstract = True
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        if len(args) < 2:
+            return
+
+        post_target_id, schema_name = args[0], args[1]
+
+        logger.error(
+            "publisher.unexpected_failure",
+            extra={
+                "post_target_id": post_target_id,
+                "task_id": task_id,
+                "exc_type": type(exc).__name__,
+                "error": str(exc),
+            },
+        )
+
+        try:
+            with schema_context(schema_name):
+                job = PublishJob.objects.filter(
+                    target_id=post_target_id,
+                    status=PublishJob.Status.RUNNING,
+                ).first()
+                if job is not None:
+                    job.mark_failed(
+                        code=ErrorCode.UNKNOWN,
+                        message=str(exc),
+                        schedule_retry=False,
+                    )
+        except Exception:
+            logger.exception(
+                "on_failure handler could not mark job failed",
+                extra={"post_target_id": post_target_id, "task_id": task_id},
+            )
+
+
 @shared_task(
     bind=True,
+    base=PublisherTask,
     queue='publish',
     max_retries=5,
     acks_late=True,
@@ -27,10 +67,9 @@ class RetryablePublishError(Exception):
     retry_jitter=False,
 )
 def publish_post(self, post_target_id: str, schema_name: str):
-
     with schema_context(schema_name):
         task_id = f"publish-{post_target_id}"
-        attempt = self.request.retries + 1          # 1-indexed current attempt
+        attempt = self.request.retries + 1  # 1-indexed current attempt
         is_final = self.request.retries >= self.max_retries
 
         # 1. Fetch PostTarget
