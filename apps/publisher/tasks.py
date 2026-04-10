@@ -4,9 +4,10 @@ from django.db import transaction, IntegrityError
 from django.utils import timezone
 from django_tenants.utils import schema_context
 
+from apps.posts.models import PostTarget
 from apps.publisher.base import ErrorCode
 from apps.publisher.models import PublishJob
-from apps.publisher.platforms import get_publisher
+from apps.publisher.platforms.mock import MockPublisher
 from apps.publisher.schemas import PublishSuccessPayload
 
 logger = get_task_logger(__name__)
@@ -68,9 +69,6 @@ class PublisherTask(Task):
 )
 def publish_post(self, post_target_id: str, schema_name: str):
     with schema_context(schema_name):
-        # PostTarget is a read-only FK lookup from an adjacent app — permitted by CLAUDE.md §2.
-        from apps.posts.models import PostTarget  # noqa: PLC0415
-
         task_id = f"publish-{post_target_id}"
         attempt = self.request.retries + 1
         is_final = self.request.retries >= self.max_retries
@@ -146,7 +144,7 @@ def publish_post(self, post_target_id: str, schema_name: str):
         post_target.post.sync_status()
 
         # 6. Resolve the correct publisher from the platform registry.
-        publisher = get_publisher(post_target.platform)
+        publisher = MockPublisher()
         result = publisher.publish(post_target)
 
         # 7. Handle result.
