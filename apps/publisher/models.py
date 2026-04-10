@@ -1,5 +1,4 @@
 import uuid
-import datetime
 from django.db import models
 from django.utils import timezone
 from apps.posts.models import PostTarget
@@ -134,15 +133,12 @@ class PublishJob(models.Model):
         ).model_dump(mode="json")
         self.completed_at = timezone.now()
 
-        if schedule_retry and self.can_retry:
-            backoff_seconds = 60 * (2 ** (self.attempt_number - 1))  # 1m -> 2m -> 4m
-            self.retry_at = timezone.now() + datetime.timedelta(seconds=backoff_seconds)
-        else:
-            self.retry_at = None
+        # retry_at is null — Celery owns retry timing via retry_backoff.
+        self.retry_at = None
 
         self.save(update_fields=["status", "error", "completed_at", "retry_at", "updated_at"])
 
-        if not (schedule_retry and self.can_retry):
+        if not schedule_retry:
             self.target.mark_failed(code=code, message=message)
 
     @property
