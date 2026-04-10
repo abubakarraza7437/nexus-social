@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Organizations v1 API — SocialOS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3348;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+      --get: #10b981;
+      --post: #3b82f6;
+      --patch: #f59e0b;
+      --delete: #ef4444;
+      --put: #8b5cf6;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; }
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrapper { display: flex; min-height: 100vh; }
+    nav.sidebar {
+      width: 300px; min-width: 300px; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 24px 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar .logo span { font-size: 12px; color: var(--muted); }
+    .sidebar-section { padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+    .sidebar a { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 12px; color: var(--muted); transition: all 0.15s; }
+    .sidebar a:hover, .sidebar a.active { background: var(--surface2); color: var(--text); text-decoration: none; }
+    .sidebar .method-badge { font-size: 8px; font-weight: 700; padding: 2px 5px; border-radius: 4px; margin-right: 4px; flex-shrink: 0; }
+    .sidebar .method-get { background: rgba(16,185,129,0.15); color: var(--get); }
+    .sidebar .method-post { background: rgba(59,130,246,0.15); color: var(--post); }
+    .sidebar .method-patch { background: rgba(245,158,11,0.15); color: var(--patch); }
+    .sidebar .method-delete { background: rgba(239,68,68,0.15); color: var(--delete); }
+
+    main { flex: 1; max-width: 1000px; padding: 48px 56px; }
+    h1.page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+    .version-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 6px; background: rgba(99,102,241,0.2); color: var(--accent2); margin-left: 12px; vertical-align: middle; }
+
+    .endpoint-section { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+    .endpoint-section:last-child { border-bottom: none; }
+    .endpoint-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .endpoint-title { font-size: 20px; font-weight: 700; }
+    .method { display: inline-block; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; }
+    .method-get { background: rgba(16,185,129,0.15); color: var(--get); }
+    .method-post { background: rgba(59,130,246,0.15); color: var(--post); }
+    .method-patch { background: rgba(245,158,11,0.15); color: var(--patch); }
+    .method-delete { background: rgba(239,68,68,0.15); color: var(--delete); }
+    .endpoint-path { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; color: var(--accent2); background: var(--surface2); padding: 4px 10px; border-radius: 6px; }
+
+    .endpoint-desc { color: var(--muted); font-size: 14px; margin-bottom: 20px; line-height: 1.7; }
+
+    .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+    .info-box h4 { font-size: 13px; font-weight: 700; color: var(--accent2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); color: var(--muted); font-weight: 600; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; color: #a78bfa; }
+    .required { color: var(--delete); font-size: 10px; font-weight: 600; }
+    .optional { color: var(--muted); font-size: 10px; }
+
+    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.6; }
+    pre .key { color: #7dd3fc; }
+    pre .string { color: #86efac; }
+    pre .number { color: #fcd34d; }
+    pre .bool { color: #f472b6; }
+    pre .null { color: var(--muted); }
+
+    .response-codes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .response-code { font-size: 12px; padding: 4px 10px; border-radius: 6px; font-weight: 600; }
+    .code-2xx { background: rgba(16,185,129,0.15); color: var(--get); }
+    .code-4xx { background: rgba(245,158,11,0.15); color: var(--patch); }
+
+    .auth-badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 4px; margin-left: 8px; }
+    .auth-required { background: rgba(245,158,11,0.15); color: var(--patch); }
+    .role-badge { display: inline-block; font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(139,92,246,0.15); color: var(--put); margin-left: 4px; }
+
+    .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--text); }
+
+    .section-divider { font-size: 18px; font-weight: 700; color: var(--text); margin: 48px 0 24px; padding-bottom: 12px; border-bottom: 2px solid var(--accent); }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>SocialOS API</h1>
+      <span>Organizations v1</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Navigation</div>
+      <a href="../index.html">← Back to Index</a>
+      <a href="v2.html">View v2 Docs</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Organization CRUD</div>
+      <a href="#org-list"><span class="method-badge method-get">GET</span> List Organizations</a>
+      <a href="#org-detail"><span class="method-badge method-get">GET</span> Get Organization</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Members</div>
+      <a href="#member-list"><span class="method-badge method-get">GET</span> List Members</a>
+      <a href="#member-update"><span class="method-badge method-patch">PATCH</span> Update Member Role</a>
+      <a href="#member-remove"><span class="method-badge method-delete">DEL</span> Remove Member</a>
+      <a href="#invite"><span class="method-badge method-post">POST</span> Invite Member</a>
+      <a href="#join"><span class="method-badge method-post">POST</span> Join via Token</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Onboarding</div>
+      <a href="#check-or-create"><span class="method-badge method-post">POST</span> Check or Create</a>
+      <a href="#request-join"><span class="method-badge method-post">POST</span> Request to Join</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Join Requests</div>
+      <a href="#my-requests"><span class="method-badge method-get">GET</span> My Join Requests</a>
+      <a href="#cancel-request"><span class="method-badge method-delete">DEL</span> Cancel Request</a>
+      <a href="#list-requests"><span class="method-badge method-get">GET</span> List Requests (Admin)</a>
+      <a href="#approve-request"><span class="method-badge method-post">POST</span> Approve Request</a>
+      <a href="#reject-request"><span class="method-badge method-post">POST</span> Reject Request</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="breadcrumb">
+      <a href="../index.html">API Reference</a> / <a href="v1.html">Organizations</a> / v1
+    </div>
+
+    <h1 class="page-title">Organizations API <span class="version-badge">v1</span></h1>
+    <p class="subtitle">Multi-tenant organization management — create, join, invite members, and manage roles.</p>
+
+    <!-- ORGANIZATION LIST -->
+    <h2 class="section-divider">Organization CRUD</h2>
+
+    <section class="endpoint-section" id="org-list">
+      <div class="endpoint-header">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/v1/orgs/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+      </div>
+      <h3 class="endpoint-title">List Organizations</h3>
+      <p class="endpoint-desc">
+        Returns all organizations the authenticated user is an active member of.
+      </p>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>[
+  {
+    <span class="key">"id"</span>: <span class="string">"550e8400-e29b-41d4-a716-446655440000"</span>,
+    <span class="key">"name"</span>: <span class="string">"Acme Corp"</span>,
+    <span class="key">"slug"</span>: <span class="string">"acme-corp"</span>,
+    <span class="key">"schema_name"</span>: <span class="string">"org_acme_corp"</span>,
+    <span class="key">"plan"</span>: <span class="string">"pro"</span>,
+    <span class="key">"is_active"</span>: <span class="bool">true</span>,
+    <span class="key">"created_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>
+  }
+]</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Organization Object</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td><code>uuid</code></td><td>Unique organization identifier.</td></tr>
+            <tr><td><code>name</code></td><td><code>string</code></td><td>Display name of the organization.</td></tr>
+            <tr><td><code>slug</code></td><td><code>string</code></td><td>URL-friendly identifier.</td></tr>
+            <tr><td><code>schema_name</code></td><td><code>string</code></td><td>PostgreSQL schema name (internal).</td></tr>
+            <tr><td><code>plan</code></td><td><code>string</code></td><td>Subscription plan: <code>free</code>, <code>pro</code>, <code>business</code>, <code>enterprise</code>.</td></tr>
+            <tr><td><code>is_active</code></td><td><code>boolean</code></td><td>Whether the organization is active.</td></tr>
+            <tr><td><code>created_at</code></td><td><code>datetime</code></td><td>ISO 8601 creation timestamp.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ORGANIZATION DETAIL -->
+    <section class="endpoint-section" id="org-detail">
+      <div class="endpoint-header">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/v1/orgs/{id}/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+      </div>
+      <h3 class="endpoint-title">Get Organization</h3>
+      <p class="endpoint-desc">
+        Retrieve details of a specific organization. Requester must be an active member.
+      </p>
+
+      <div class="info-box">
+        <h4>Path Parameters</h4>
+        <table>
+          <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td><code>uuid</code></td><td>Organization UUID.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Error Responses</h4>
+        <div class="response-codes">
+          <span class="response-code code-4xx">403 Not a Member</span>
+          <span class="response-code code-4xx">404 Not Found</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- MEMBERS -->
+    <h2 class="section-divider">Member Management</h2>
+
+    <section class="endpoint-section" id="member-list">
+      <div class="endpoint-header">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/v1/orgs/{id}/members/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+      </div>
+      <h3 class="endpoint-title">List Members</h3>
+      <p class="endpoint-desc">
+        Returns all active members of the organization. Requester must be a member.
+      </p>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>[
+  {
+    <span class="key">"id"</span>: <span class="string">"member-uuid-here"</span>,
+    <span class="key">"user"</span>: {
+      <span class="key">"id"</span>: <span class="string">"user-uuid-here"</span>,
+      <span class="key">"email"</span>: <span class="string">"john@example.com"</span>,
+      <span class="key">"name"</span>: <span class="string">"John Doe"</span>
+    },
+    <span class="key">"organization_id"</span>: <span class="string">"org-uuid-here"</span>,
+    <span class="key">"role"</span>: <span class="string">"owner"</span>,
+    <span class="key">"is_active"</span>: <span class="bool">true</span>,
+    <span class="key">"created_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>
+  }
+]</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Role Hierarchy</h4>
+        <table>
+          <thead><tr><th>Role</th><th>Level</th><th>Capabilities</th></tr></thead>
+          <tbody>
+            <tr><td><code>owner</code></td><td>Highest</td><td>Full control — can delete org, assign owner role, manage all members.</td></tr>
+            <tr><td><code>admin</code></td><td>High</td><td>Manage members (except owners), approve/reject join requests, invite users.</td></tr>
+            <tr><td><code>member</code></td><td>Standard</td><td>Access organization resources, view members.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="endpoint-section" id="member-update">
+      <div class="endpoint-header">
+        <span class="method method-patch">PATCH</span>
+        <span class="endpoint-path">/api/v1/orgs/{id}/members/{member_id}/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+        <span class="role-badge">Owner/Admin</span>
+      </div>
+      <h3 class="endpoint-title">Update Member Role</h3>
+      <p class="endpoint-desc">
+        Change a member's role. Only owners can assign the owner role. Cannot change your own role.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>role</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>New role: <code>owner</code>, <code>admin</code>, or <code>member</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Business Rules</h4>
+        <ul style="font-size: 13px; color: var(--muted); padding-left: 20px; line-height: 1.8;">
+          <li>Cannot change your own role.</li>
+          <li>Only owners can assign the <code>owner</code> role.</li>
+          <li>Cannot demote the last remaining owner.</li>
+          <li>Admins cannot modify owner roles.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="endpoint-section" id="member-remove">
+      <div class="endpoint-header">
+        <span class="method method-delete">DELETE</span>
+        <span class="endpoint-path">/api/v1/orgs/{id}/members/{member_id}/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+        <span class="role-badge">Owner/Admin</span>
+      </div>
+      <h3 class="endpoint-title">Remove Member</h3>
+      <p class="endpoint-desc">
+        Deactivate a member from the organization. The member record is soft-deleted (is_active=false).
+      </p>
+
+      <div class="info-box">
+        <h4>Business Rules</h4>
+        <ul style="font-size: 13px; color: var(--muted); padding-left: 20px; line-height: 1.8;">
+          <li>Cannot remove yourself (use leave organization instead).</li>
+          <li>Admins cannot remove owners.</li>
+          <li>Cannot remove the last remaining owner.</li>
+        </ul>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (204 No Content)</h4>
+        <p style="font-size: 13px; color: var(--muted);">Empty response body.</p>
+      </div>
+    </section>
+
+    <section class="endpoint-section" id="invite">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/orgs/{id}/invite/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+        <span class="role-badge">Owner/Admin</span>
+      </div>
+      <h3 class="endpoint-title">Invite Member</h3>
+      <p class="endpoint-desc">
+        Send an email invitation to join the organization. The invitation token expires after 7 days.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>email</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Email address to invite.</td>
+            </tr>
+            <tr>
+              <td><code>role</code> <span class="optional">optional</span></td>
+              <td><code>string</code></td>
+              <td>Role to assign: <code>owner</code>, <code>admin</code>, <code>member</code>. Default: <code>member</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (201 Created)</h4>
+        <pre>{
+  <span class="key">"detail"</span>: <span class="string">"Invitation sent."</span>,
+  <span class="key">"token"</span>: <span class="string">"abc123xyz..."</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Error Responses</h4>
+        <div class="response-codes">
+          <span class="response-code code-4xx">400 Already a Member</span>
+          <span class="response-code code-4xx">403 Insufficient Permissions</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="endpoint-section" id="join">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/orgs/join/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+      </div>
+      <h3 class="endpoint-title">Join via Invitation Token</h3>
+      <p class="endpoint-desc">
+        Accept an invitation and join the organization. The invitation email must match the authenticated user's email.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>token</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Invitation token from the email.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (201 Created)</h4>
+        <p style="font-size: 13px; color: var(--muted); margin-bottom: 12px;">Returns the organization object.</p>
+        <pre>{
+  <span class="key">"id"</span>: <span class="string">"org-uuid-here"</span>,
+  <span class="key">"name"</span>: <span class="string">"Acme Corp"</span>,
+  <span class="key">"slug"</span>: <span class="string">"acme-corp"</span>,
+  ...
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Error Responses</h4>
+        <div class="response-codes">
+          <span class="response-code code-4xx">400 Invalid/Expired Token</span>
+          <span class="response-code code-4xx">400 Already a Member</span>
+          <span class="response-code code-4xx">403 Email Mismatch</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ONBOARDING -->
+    <h2 class="section-divider">Onboarding Flow</h2>
+
+    <section class="endpoint-section" id="check-or-create">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/orgs/check-or-create/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+      </div>
+      <h3 class="endpoint-title">Check or Create Organization</h3>
+      <p class="endpoint-desc">
+        Post-signup onboarding endpoint. Checks if an organization exists by name. If not, creates it with the user as owner.
+        User must have a verified email.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>organization_name</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Name of the organization (2-255 chars). Alphanumeric, spaces, hyphens, underscores, periods allowed.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Response: Organization Exists</h4>
+        <pre>{
+  <span class="key">"exists"</span>: <span class="bool">true</span>,
+  <span class="key">"org_id"</span>: <span class="string">"org-uuid-here"</span>,
+  <span class="key">"org_name"</span>: <span class="string">"Acme Corp"</span>,
+  <span class="key">"message"</span>: <span class="string">"This organization already exists. Would you like to request to join?"</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Response: Already a Member</h4>
+        <pre>{
+  <span class="key">"exists"</span>: <span class="bool">true</span>,
+  <span class="key">"already_member"</span>: <span class="bool">true</span>,
+  <span class="key">"organization"</span>: { ... },
+  <span class="key">"message"</span>: <span class="string">"You are already a member of this organization."</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Response: Pending Request</h4>
+        <pre>{
+  <span class="key">"exists"</span>: <span class="bool">true</span>,
+  <span class="key">"pending_request"</span>: <span class="bool">true</span>,
+  <span class="key">"org_id"</span>: <span class="string">"org-uuid-here"</span>,
+  <span class="key">"org_name"</span>: <span class="string">"Acme Corp"</span>,
+  <span class="key">"request_id"</span>: <span class="string">"request-uuid-here"</span>,
+  <span class="key">"message"</span>: <span class="string">"You already have a pending request to join this organization."</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Response: Organization Created (201)</h4>
+        <pre>{
+  <span class="key">"exists"</span>: <span class="bool">false</span>,
+  <span class="key">"organization"</span>: { ... },
+  <span class="key">"membership"</span>: { ... },
+  <span class="key">"message"</span>: <span class="string">"Organization created successfully. You are the owner."</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Reserved Names</h4>
+        <p style="font-size: 13px; color: var(--muted);">
+          The following names are reserved and cannot be used:
+          <code>admin</code>, <code>administrator</code>, <code>system</code>, <code>public</code>, <code>private</code>,
+          <code>test</code>, <code>demo</code>, <code>example</code>, <code>support</code>, <code>help</code>, <code>api</code>,
+          <code>www</code>, <code>mail</code>, <code>email</code>, <code>root</code>, <code>null</code>, <code>undefined</code>
+        </p>
+      </div>
+    </section>
+
+    <section class="endpoint-section" id="request-join">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/orgs/request-join/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+      </div>
+      <h3 class="endpoint-title">Request to Join Organization</h3>
+      <p class="endpoint-desc">
+        Submit a request to join an existing organization. The request must be approved by an owner or admin.
+        User must have a verified email.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>org_id</code> <span class="required">required</span></td>
+              <td><code>uuid</code></td>
+              <td>UUID of the organization to join.</td>
+            </tr>
+            <tr>
+              <td><code>message</code> <span class="optional">optional</span></td>
+              <td><code>string</code></td>
+              <td>Optional message explaining why you want to join (max 500 chars).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (201 Created)</h4>
+        <pre>{
+  <span class="key">"detail"</span>: <span class="string">"Join request submitted successfully."</span>,
+  <span class="key">"request"</span>: {
+    <span class="key">"id"</span>: <span class="string">"request-uuid-here"</span>,
+    <span class="key">"user"</span>: { ... },
+    <span class="key">"organization"</span>: { ... },
+    <span class="key">"status"</span>: <span class="string">"pending"</span>,
+    <span class="key">"message"</span>: <span class="string">"I'd like to join your team!"</span>,
+    <span class="key">"created_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>,
+    <span class="key">"expires_at"</span>: <span class="string">"2024-02-14T10:30:00Z"</span>
+  }
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Join Request Lifecycle</h4>
+        <ul style="font-size: 13px; color: var(--muted); padding-left: 20px; line-height: 1.8;">
+          <li>Requests expire after <strong>30 days</strong> if not acted upon.</li>
+          <li>Only one pending request per user+org pair is allowed.</li>
+          <li>Organization admins are notified via email when a request is submitted.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- JOIN REQUESTS -->
+    <h2 class="section-divider">Join Request Management</h2>
+
+    <section class="endpoint-section" id="my-requests">
+      <div class="endpoint-header">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/v1/orgs/my-join-requests/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+      </div>
+      <h3 class="endpoint-title">My Join Requests</h3>
+      <p class="endpoint-desc">
+        List all join requests submitted by the authenticated user.
+      </p>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>[
+  {
+    <span class="key">"id"</span>: <span class="string">"request-uuid-here"</span>,
+    <span class="key">"user"</span>: { ... },
+    <span class="key">"organization"</span>: { ... },
+    <span class="key">"status"</span>: <span class="string">"pending"</span>,
+    <span class="key">"message"</span>: <span class="string">"I'd like to join!"</span>,
+    <span class="key">"reviewed_by"</span>: <span class="null">null</span>,
+    <span class="key">"reviewed_at"</span>: <span class="null">null</span>,
+    <span class="key">"rejection_reason"</span>: <span class="string">""</span>,
+    <span class="key">"created_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>,
+    <span class="key">"expires_at"</span>: <span class="string">"2024-02-14T10:30:00Z"</span>
+  }
+]</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Join Request Status Values</h4>
+        <table>
+          <thead><tr><th>Status</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>pending</code></td><td>Awaiting review by org admin.</td></tr>
+            <tr><td><code>approved</code></td><td>Request approved, user is now a member.</td></tr>
+            <tr><td><code>rejected</code></td><td>Request rejected by admin.</td></tr>
+            <tr><td><code>expired</code></td><td>Request expired after 30 days.</td></tr>
+            <tr><td><code>cancelled</code></td><td>Request cancelled by the user.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="endpoint-section" id="cancel-request">
+      <div class="endpoint-header">
+        <span class="method method-delete">DELETE</span>
+        <span class="endpoint-path">/api/v1/orgs/my-join-requests/{request_id}/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+      </div>
+      <h3 class="endpoint-title">Cancel Join Request</h3>
+      <p class="endpoint-desc">
+        Cancel a pending join request. Only pending requests can be cancelled.
+      </p>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>{
+  <span class="key">"detail"</span>: <span class="string">"Join request cancelled."</span>
+}</pre>
+      </div>
+    </section>
+
+    <section class="endpoint-section" id="list-requests">
+      <div class="endpoint-header">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/v1/orgs/{id}/join-requests/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+        <span class="role-badge">Owner/Admin</span>
+      </div>
+      <h3 class="endpoint-title">List Join Requests (Admin)</h3>
+      <p class="endpoint-desc">
+        List all join requests for an organization. Supports filtering by status.
+      </p>
+
+      <div class="info-box">
+        <h4>Query Parameters</h4>
+        <table>
+          <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>status</code> <span class="optional">optional</span></td>
+              <td><code>string</code></td>
+              <td>Filter by status: <code>pending</code>, <code>approved</code>, <code>rejected</code>, <code>expired</code>, <code>cancelled</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>[
+  {
+    <span class="key">"id"</span>: <span class="string">"request-uuid-here"</span>,
+    <span class="key">"user"</span>: {
+      <span class="key">"id"</span>: <span class="string">"user-uuid"</span>,
+      <span class="key">"email"</span>: <span class="string">"jane@example.com"</span>,
+      <span class="key">"name"</span>: <span class="string">"Jane Smith"</span>
+    },
+    <span class="key">"status"</span>: <span class="string">"pending"</span>,
+    <span class="key">"message"</span>: <span class="string">"I'd like to join your team!"</span>,
+    <span class="key">"created_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>,
+    <span class="key">"expires_at"</span>: <span class="string">"2024-02-14T10:30:00Z"</span>
+  }
+]</pre>
+      </div>
+    </section>
+
+    <section class="endpoint-section" id="approve-request">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/orgs/{id}/join-requests/{request_id}/approve/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+        <span class="role-badge">Owner/Admin</span>
+      </div>
+      <h3 class="endpoint-title">Approve Join Request</h3>
+      <p class="endpoint-desc">
+        Approve a pending join request and add the user as a member.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>role</code> <span class="optional">optional</span></td>
+              <td><code>string</code></td>
+              <td>Role to assign: <code>owner</code>, <code>admin</code>, <code>member</code>. Default: <code>member</code>. Only owners can assign owner/admin roles.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>{
+  <span class="key">"detail"</span>: <span class="string">"Join request approved."</span>,
+  <span class="key">"membership"</span>: {
+    <span class="key">"id"</span>: <span class="string">"member-uuid"</span>,
+    <span class="key">"user"</span>: { ... },
+    <span class="key">"organization_id"</span>: <span class="string">"org-uuid"</span>,
+    <span class="key">"role"</span>: <span class="string">"member"</span>,
+    <span class="key">"is_active"</span>: <span class="bool">true</span>,
+    <span class="key">"created_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>
+  }
+}</pre>
+      </div>
+    </section>
+
+    <section class="endpoint-section" id="reject-request">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/orgs/{id}/join-requests/{request_id}/reject/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+        <span class="role-badge">Owner/Admin</span>
+      </div>
+      <h3 class="endpoint-title">Reject Join Request</h3>
+      <p class="endpoint-desc">
+        Reject a pending join request. An optional reason can be provided.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>reason</code> <span class="optional">optional</span></td>
+              <td><code>string</code></td>
+              <td>Reason for rejection (max 500 chars). Shared with the requester.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>{
+  <span class="key">"detail"</span>: <span class="string">"Join request rejected."</span>,
+  <span class="key">"request"</span>: {
+    <span class="key">"id"</span>: <span class="string">"request-uuid"</span>,
+    <span class="key">"status"</span>: <span class="string">"rejected"</span>,
+    <span class="key">"rejection_reason"</span>: <span class="string">"Position has been filled."</span>,
+    ...
+  }
+}</pre>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

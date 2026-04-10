@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notifications API — SocialOS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3348;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; }
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrapper { display: flex; min-height: 100vh; }
+    nav.sidebar {
+      width: 260px; min-width: 260px; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 24px 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar .logo span { font-size: 12px; color: var(--muted); }
+    .sidebar-section { padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+    .sidebar a { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); transition: all 0.15s; }
+    .sidebar a:hover, .sidebar a.active { background: var(--surface2); color: var(--text); text-decoration: none; }
+
+    main { flex: 1; max-width: 900px; padding: 48px 56px; }
+    h1.page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+    .internal-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 6px; background: rgba(245,158,11,0.2); color: #f59e0b; margin-left: 12px; vertical-align: middle; }
+
+    .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--text); }
+
+    .internal-notice { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(239,68,68,0.1)); border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 40px; }
+    .internal-notice h2 { font-size: 24px; margin-bottom: 12px; color: #f59e0b; }
+    .internal-notice p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+    .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+    .info-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--accent2); }
+    .info-box h4 { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); color: var(--muted); font-weight: 600; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a78bfa; }
+
+    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; }
+    pre .key { color: #7dd3fc; }
+    pre .string { color: #86efac; }
+    pre .number { color: #fcd34d; }
+    pre .bool { color: #f472b6; }
+    pre .comment { color: var(--muted); font-style: italic; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>SocialOS API</h1>
+      <span>Notifications</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Navigation</div>
+      <a href="../index.html">← Back to Index</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Components</div>
+      <a href="#websocket">WebSocket</a>
+      <a href="#types">Notification Types</a>
+      <a href="#dispatcher">Dispatcher</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="breadcrumb">
+      <a href="../index.html">API Reference</a> / Notifications
+    </div>
+
+    <h1 class="page-title">Notifications <span class="internal-badge">Internal Only</span></h1>
+    <p class="subtitle">In-app notifications with WebSocket push via Django Channels.</p>
+
+    <div class="internal-notice">
+      <h2>⚠️ Internal Service</h2>
+      <p>Notifications are delivered via WebSocket. There is no public REST API for notifications — they are pushed to connected clients in real-time.</p>
+    </div>
+
+    <div class="info-box">
+      <h3>Architecture</h3>
+      <table>
+        <thead><tr><th>Component</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>WebSocket Server</strong></td><td>Django Channels with Redis backend</td></tr>
+          <tr><td><strong>Channel Groups</strong></td><td><code>org_{org_id}</code> — per-organization groups</td></tr>
+          <tr><td><strong>Dispatcher</strong></td><td>Internal service that routes notifications</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="websocket">
+      <h3>WebSocket Connection</h3>
+      <h4>Connection URL</h4>
+      <pre>wss://api.socialos.io/ws/notifications/?token={jwt_token}</pre>
+      
+      <h4 style="margin-top: 16px;">Authentication</h4>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">
+        The JWT token is validated on connection. The user is automatically subscribed to their organization's channel group.
+      </p>
+
+      <h4>Message Format</h4>
+      <pre>{
+  <span class="key">"type"</span>: <span class="string">"notification"</span>,
+  <span class="key">"payload"</span>: {
+    <span class="key">"id"</span>: <span class="string">"notification-uuid"</span>,
+    <span class="key">"notification_type"</span>: <span class="string">"post.published"</span>,
+    <span class="key">"title"</span>: <span class="string">"Post Published"</span>,
+    <span class="key">"message"</span>: <span class="string">"Your post was published to Twitter"</span>,
+    <span class="key">"data"</span>: {
+      <span class="key">"post_id"</span>: <span class="string">"post-uuid"</span>,
+      <span class="key">"platform"</span>: <span class="string">"twitter"</span>
+    },
+    <span class="key">"created_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>,
+    <span class="key">"read"</span>: <span class="bool">false</span>
+  }
+}</pre>
+    </div>
+
+    <div class="info-box" id="types">
+      <h3>Notification Types</h3>
+      <table>
+        <thead><tr><th>Type</th><th>Description</th><th>Recipients</th></tr></thead>
+        <tbody>
+          <tr><td><code>post.published</code></td><td>Post successfully published</td><td>Post author</td></tr>
+          <tr><td><code>post.failed</code></td><td>Post publishing failed</td><td>Post author, admins</td></tr>
+          <tr><td><code>post.scheduled</code></td><td>Post scheduled for publishing</td><td>Post author</td></tr>
+          <tr><td><code>member.joined</code></td><td>New member joined org</td><td>Admins, owners</td></tr>
+          <tr><td><code>member.left</code></td><td>Member left org</td><td>Admins, owners</td></tr>
+          <tr><td><code>join_request.new</code></td><td>New join request</td><td>Admins, owners</td></tr>
+          <tr><td><code>join_request.approved</code></td><td>Join request approved</td><td>Requester</td></tr>
+          <tr><td><code>join_request.rejected</code></td><td>Join request rejected</td><td>Requester</td></tr>
+          <tr><td><code>account.connected</code></td><td>Social account connected</td><td>All members</td></tr>
+          <tr><td><code>account.disconnected</code></td><td>Social account disconnected</td><td>Admins, owners</td></tr>
+          <tr><td><code>account.token_expired</code></td><td>OAuth token expired</td><td>Admins, owners</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="dispatcher">
+      <h3>Notification Dispatcher</h3>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">
+        The dispatcher is an internal service that routes notifications to the appropriate channel groups.
+      </p>
+      <pre><span class="comment"># apps/notifications/dispatcher.py</span>
+
+class NotificationDispatcher:
+    <span class="string">"""Routes notifications to WebSocket channel groups."""</span>
+    
+    def send_to_org(self, org_id: str, notification: dict):
+        <span class="string">"""Send notification to all members of an organization."""</span>
+        channel_layer.group_send(
+            f"org_{org_id}",
+            {"type": "notification", "payload": notification}
+        )
+    
+    def send_to_user(self, user_id: str, notification: dict):
+        <span class="string">"""Send notification to a specific user."""</span>
+        channel_layer.group_send(
+            f"user_{user_id}",
+            {"type": "notification", "payload": notification}
+        )
+    
+    def send_to_admins(self, org_id: str, notification: dict):
+        <span class="string">"""Send notification to org admins and owners only."""</span>
+        channel_layer.group_send(
+            f"org_{org_id}_admins",
+            {"type": "notification", "payload": notification}
+        )</pre>
+    </div>
+
+    <div class="info-box">
+      <h3>Client-Side Events</h3>
+      <table>
+        <thead><tr><th>Event</th><th>Direction</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>notification</code></td><td>Server → Client</td><td>New notification received</td></tr>
+          <tr><td><code>mark_read</code></td><td>Client → Server</td><td>Mark notification as read</td></tr>
+          <tr><td><code>mark_all_read</code></td><td>Client → Server</td><td>Mark all notifications as read</td></tr>
+          <tr><td><code>ping</code></td><td>Client → Server</td><td>Keep connection alive</td></tr>
+          <tr><td><code>pong</code></td><td>Server → Client</td><td>Response to ping</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

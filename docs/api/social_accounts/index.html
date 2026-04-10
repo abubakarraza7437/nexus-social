@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Social Accounts API — SocialOS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3348;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; }
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrapper { display: flex; min-height: 100vh; }
+    nav.sidebar {
+      width: 260px; min-width: 260px; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 24px 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar .logo span { font-size: 12px; color: var(--muted); }
+    .sidebar-section { padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+    .sidebar a { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); transition: all 0.15s; }
+    .sidebar a:hover, .sidebar a.active { background: var(--surface2); color: var(--text); text-decoration: none; }
+
+    main { flex: 1; max-width: 900px; padding: 48px 56px; }
+    h1.page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+    .stub-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 6px; background: rgba(100,100,100,0.2); color: var(--muted); margin-left: 12px; vertical-align: middle; }
+
+    .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--text); }
+
+    .coming-soon { background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1)); border: 1px solid var(--border); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 40px; }
+    .coming-soon h2 { font-size: 24px; margin-bottom: 12px; }
+    .coming-soon p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+    .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+    .info-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--accent2); }
+    .info-box h4 { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); color: var(--muted); font-weight: 600; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a78bfa; }
+
+    .platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 16px; }
+    .platform-card { background: var(--surface2); border-radius: 8px; padding: 16px; text-align: center; }
+    .platform-card .icon { font-size: 32px; margin-bottom: 8px; }
+    .platform-card .name { font-weight: 600; font-size: 14px; }
+    .platform-card .status { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>SocialOS API</h1>
+      <span>Social Accounts</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Navigation</div>
+      <a href="../index.html">← Back to Index</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Planned Endpoints</div>
+      <a href="#connect">Connect Account</a>
+      <a href="#disconnect">Disconnect Account</a>
+      <a href="#list">List Accounts</a>
+      <a href="#refresh">Refresh Token</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="breadcrumb">
+      <a href="../index.html">API Reference</a> / Social Accounts
+    </div>
+
+    <h1 class="page-title">Social Accounts API <span class="stub-badge">Coming Soon</span></h1>
+    <p class="subtitle">OAuth connections for social media platforms — connect, disconnect, and manage tokens.</p>
+
+    <div class="coming-soon">
+      <h2>🚧 Under Development</h2>
+      <p>The Social Accounts API is currently being implemented. This documentation outlines the planned endpoints and data models.</p>
+    </div>
+
+    <div class="info-box">
+      <h3>Supported Platforms</h3>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">OAuth integration with automatic token refresh and encryption.</p>
+      <div class="platform-grid">
+        <div class="platform-card">
+          <div class="icon">📘</div>
+          <div class="name">Facebook</div>
+          <div class="status">Pages & Groups</div>
+        </div>
+        <div class="platform-card">
+          <div class="icon">📸</div>
+          <div class="name">Instagram</div>
+          <div class="status">Business & Creator</div>
+        </div>
+        <div class="platform-card">
+          <div class="icon">🐦</div>
+          <div class="name">Twitter/X</div>
+          <div class="status">OAuth 2.0</div>
+        </div>
+        <div class="platform-card">
+          <div class="icon">💼</div>
+          <div class="name">LinkedIn</div>
+          <div class="status">Company Pages</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box" id="connect">
+      <h3>Planned: Connect Account</h3>
+      <h4>POST /api/v1/social-accounts/connect/</h4>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">Initiate OAuth flow to connect a social media account.</p>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>platform</code></td><td><code>string</code></td><td>Platform identifier: <code>facebook</code>, <code>instagram</code>, <code>twitter</code>, <code>linkedin</code></td></tr>
+          <tr><td><code>redirect_uri</code></td><td><code>string</code></td><td>OAuth callback URL</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="disconnect">
+      <h3>Planned: Disconnect Account</h3>
+      <h4>DELETE /api/v1/social-accounts/{account_id}/</h4>
+      <p style="color: var(--muted); font-size: 13px;">Revoke OAuth tokens and remove the connected account.</p>
+    </div>
+
+    <div class="info-box" id="list">
+      <h3>Planned: List Connected Accounts</h3>
+      <h4>GET /api/v1/social-accounts/</h4>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">List all social accounts connected to the organization.</p>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><code>uuid</code></td><td>Account identifier</td></tr>
+          <tr><td><code>platform</code></td><td><code>string</code></td><td>Platform name</td></tr>
+          <tr><td><code>platform_user_id</code></td><td><code>string</code></td><td>User ID on the platform</td></tr>
+          <tr><td><code>username</code></td><td><code>string</code></td><td>Platform username/handle</td></tr>
+          <tr><td><code>display_name</code></td><td><code>string</code></td><td>Display name on platform</td></tr>
+          <tr><td><code>avatar_url</code></td><td><code>string</code></td><td>Profile picture URL</td></tr>
+          <tr><td><code>is_active</code></td><td><code>boolean</code></td><td>Whether tokens are valid</td></tr>
+          <tr><td><code>connected_at</code></td><td><code>datetime</code></td><td>When the account was connected</td></tr>
+          <tr><td><code>token_expires_at</code></td><td><code>datetime</code></td><td>When the access token expires</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="refresh">
+      <h3>Planned: Refresh Token</h3>
+      <h4>POST /api/v1/social-accounts/{account_id}/refresh/</h4>
+      <p style="color: var(--muted); font-size: 13px;">Manually trigger a token refresh (normally handled automatically).</p>
+    </div>
+
+    <div class="info-box">
+      <h3>Security Features</h3>
+      <table>
+        <thead><tr><th>Feature</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Token Encryption</strong></td><td>All OAuth tokens are encrypted at rest using AES-256-GCM</td></tr>
+          <tr><td><strong>Auto-Refresh</strong></td><td>Tokens are automatically refreshed before expiry via Celery tasks</td></tr>
+          <tr><td><strong>Audit Logging</strong></td><td>All token operations are logged to the audit trail</td></tr>
+          <tr><td><strong>Kafka Events</strong></td><td>Token refresh events published to <code>socialos.oauth.token_refreshed</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

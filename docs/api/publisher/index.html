@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Publisher API — SocialOS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3348;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; }
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrapper { display: flex; min-height: 100vh; }
+    nav.sidebar {
+      width: 260px; min-width: 260px; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 24px 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar .logo span { font-size: 12px; color: var(--muted); }
+    .sidebar-section { padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+    .sidebar a { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); transition: all 0.15s; }
+    .sidebar a:hover, .sidebar a.active { background: var(--surface2); color: var(--text); text-decoration: none; }
+
+    main { flex: 1; max-width: 900px; padding: 48px 56px; }
+    h1.page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+    .internal-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 6px; background: rgba(245,158,11,0.2); color: #f59e0b; margin-left: 12px; vertical-align: middle; }
+
+    .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--text); }
+
+    .internal-notice { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(239,68,68,0.1)); border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 40px; }
+    .internal-notice h2 { font-size: 24px; margin-bottom: 12px; color: #f59e0b; }
+    .internal-notice p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+    .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+    .info-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--accent2); }
+    .info-box h4 { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); color: var(--muted); font-weight: 600; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a78bfa; }
+
+    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; }
+    pre .key { color: #7dd3fc; }
+    pre .string { color: #86efac; }
+    pre .number { color: #fcd34d; }
+    pre .bool { color: #f472b6; }
+    pre .comment { color: var(--muted); font-style: italic; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>SocialOS API</h1>
+      <span>Publisher</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Navigation</div>
+      <a href="../index.html">← Back to Index</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Internal Components</div>
+      <a href="#architecture">Architecture</a>
+      <a href="#platforms">Platform Adapters</a>
+      <a href="#retry">Retry Logic</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="breadcrumb">
+      <a href="../index.html">API Reference</a> / Publisher
+    </div>
+
+    <h1 class="page-title">Publisher <span class="internal-badge">Internal Only</span></h1>
+    <p class="subtitle">Publishes posts to social platforms with retry logic and error handling.</p>
+
+    <div class="internal-notice">
+      <h2>⚠️ Internal Service</h2>
+      <p>The Publisher is an internal service with no public REST API. It is triggered by Celery tasks and consumes from Kafka topics.</p>
+    </div>
+
+    <div class="info-box" id="architecture">
+      <h3>Architecture</h3>
+      <table>
+        <thead><tr><th>Component</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Celery Queue</strong></td><td><code>publish</code> (priority 10 — highest)</td></tr>
+          <tr><td><strong>Kafka Producer</strong></td><td>Publishes to <code>socialos.posts.published</code></td></tr>
+          <tr><td><strong>Kafka Consumer</strong></td><td>Consumes from <code>socialos.posts.scheduled</code></td></tr>
+          <tr><td><strong>Retry Strategy</strong></td><td>Exponential backoff with jitter</td></tr>
+          <tr><td><strong>Max Retries</strong></td><td>5 attempts</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="platforms">
+      <h3>Platform Adapters</h3>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">Each platform has a dedicated adapter implementing the <code>BasePlatformPublisher</code> interface.</p>
+      <table>
+        <thead><tr><th>Platform</th><th>Adapter</th><th>Features</th></tr></thead>
+        <tbody>
+          <tr><td>Facebook</td><td><code>FacebookPublisher</code></td><td>Pages, Groups, Stories</td></tr>
+          <tr><td>Instagram</td><td><code>InstagramPublisher</code></td><td>Feed, Stories, Reels</td></tr>
+          <tr><td>Twitter/X</td><td><code>TwitterPublisher</code></td><td>Tweets, Threads, Media</td></tr>
+          <tr><td>LinkedIn</td><td><code>LinkedInPublisher</code></td><td>Posts, Articles, Company Pages</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box">
+      <h3>Base Publisher Interface</h3>
+      <pre><span class="comment"># apps/publisher/base.py</span>
+
+class BasePlatformPublisher:
+    <span class="string">"""Abstract base class for platform-specific publishers."""</span>
+    
+    def publish(self, post: Post, account: SocialAccount) -> PublishResult:
+        <span class="string">"""Publish a post to the platform."""</span>
+        raise NotImplementedError
+    
+    def validate_content(self, post: Post) -> list[str]:
+        <span class="string">"""Validate post content against platform limits."""</span>
+        raise NotImplementedError
+    
+    def get_character_limit(self) -> int:
+        <span class="string">"""Return platform's character limit."""</span>
+        raise NotImplementedError</pre>
+    </div>
+
+    <div class="info-box" id="retry">
+      <h3>Retry Logic</h3>
+      <table>
+        <thead><tr><th>Attempt</th><th>Delay</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Immediate</td><td>First attempt</td></tr>
+          <tr><td>2</td><td>30s + jitter</td><td>First retry</td></tr>
+          <tr><td>3</td><td>2m + jitter</td><td>Second retry</td></tr>
+          <tr><td>4</td><td>8m + jitter</td><td>Third retry</td></tr>
+          <tr><td>5</td><td>30m + jitter</td><td>Final retry</td></tr>
+        </tbody>
+      </table>
+      <p style="color: var(--muted); font-size: 13px; margin-top: 16px;">
+        After 5 failed attempts, the post is marked as <code>failed</code> and an alert is sent to the organization admins.
+      </p>
+    </div>
+
+    <div class="info-box">
+      <h3>Kafka Event Schema</h3>
+      <h4>socialos.posts.published</h4>
+      <pre>{
+  <span class="key">"event_type"</span>: <span class="string">"post.published"</span>,
+  <span class="key">"org_id"</span>: <span class="string">"org-uuid"</span>,
+  <span class="key">"post_id"</span>: <span class="string">"post-uuid"</span>,
+  <span class="key">"platform"</span>: <span class="string">"twitter"</span>,
+  <span class="key">"platform_post_id"</span>: <span class="string">"1234567890"</span>,
+  <span class="key">"published_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>,
+  <span class="key">"success"</span>: <span class="bool">true</span>,
+  <span class="key">"error"</span>: <span class="null">null</span>
+}</pre>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scheduler API — SocialOS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3348;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; }
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrapper { display: flex; min-height: 100vh; }
+    nav.sidebar {
+      width: 260px; min-width: 260px; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 24px 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar .logo span { font-size: 12px; color: var(--muted); }
+    .sidebar-section { padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+    .sidebar a { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); transition: all 0.15s; }
+    .sidebar a:hover, .sidebar a.active { background: var(--surface2); color: var(--text); text-decoration: none; }
+
+    main { flex: 1; max-width: 900px; padding: 48px 56px; }
+    h1.page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+    .stub-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 6px; background: rgba(100,100,100,0.2); color: var(--muted); margin-left: 12px; vertical-align: middle; }
+
+    .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--text); }
+
+    .coming-soon { background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1)); border: 1px solid var(--border); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 40px; }
+    .coming-soon h2 { font-size: 24px; margin-bottom: 12px; }
+    .coming-soon p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+    .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+    .info-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--accent2); }
+    .info-box h4 { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); color: var(--muted); font-weight: 600; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a78bfa; }
+
+    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; }
+    pre .key { color: #7dd3fc; }
+    pre .string { color: #86efac; }
+    pre .number { color: #fcd34d; }
+    pre .bool { color: #f472b6; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>SocialOS API</h1>
+      <span>Scheduler</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Navigation</div>
+      <a href="../index.html">← Back to Index</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Planned Endpoints</div>
+      <a href="#schedules">Schedule CRUD</a>
+      <a href="#queue">Queue Management</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="breadcrumb">
+      <a href="../index.html">API Reference</a> / Scheduler
+    </div>
+
+    <h1 class="page-title">Scheduler API <span class="stub-badge">Coming Soon</span></h1>
+    <p class="subtitle">Recurring post schedules using cron-based rules and timezone-aware scheduling.</p>
+
+    <div class="coming-soon">
+      <h2>🚧 Under Development</h2>
+      <p>The Scheduler API is currently being implemented. This documentation outlines the planned endpoints and data models.</p>
+    </div>
+
+    <div class="info-box">
+      <h3>Architecture</h3>
+      <table>
+        <thead><tr><th>Component</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Celery Queue</strong></td><td><code>scheduler</code> (priority 8)</td></tr>
+          <tr><td><strong>Kafka Topic</strong></td><td><code>socialos.posts.scheduled</code></td></tr>
+          <tr><td><strong>Timezone Support</strong></td><td>Full IANA timezone database</td></tr>
+          <tr><td><strong>Cron Syntax</strong></td><td>Standard 5-field cron expressions</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="schedules">
+      <h3>Planned: Schedule CRUD</h3>
+      <h4>Endpoints</h4>
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><code>/api/v1/schedules/</code></td><td>List all schedules</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/schedules/</code></td><td>Create recurring schedule</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/v1/schedules/{id}/</code></td><td>Get schedule details</td></tr>
+          <tr><td><code>PATCH</code></td><td><code>/api/v1/schedules/{id}/</code></td><td>Update schedule</td></tr>
+          <tr><td><code>DELETE</code></td><td><code>/api/v1/schedules/{id}/</code></td><td>Delete schedule</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/schedules/{id}/pause/</code></td><td>Pause schedule</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/schedules/{id}/resume/</code></td><td>Resume schedule</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box">
+      <h3>Schedule Data Model</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><code>uuid</code></td><td>Unique schedule identifier</td></tr>
+          <tr><td><code>name</code></td><td><code>string</code></td><td>Schedule name/label</td></tr>
+          <tr><td><code>cron_expression</code></td><td><code>string</code></td><td>Cron expression (e.g., <code>0 9 * * 1-5</code>)</td></tr>
+          <tr><td><code>timezone</code></td><td><code>string</code></td><td>IANA timezone (e.g., <code>America/New_York</code>)</td></tr>
+          <tr><td><code>post_template</code></td><td><code>object</code></td><td>Template for generated posts</td></tr>
+          <tr><td><code>platforms</code></td><td><code>array</code></td><td>Target platforms</td></tr>
+          <tr><td><code>is_active</code></td><td><code>boolean</code></td><td>Whether schedule is active</td></tr>
+          <tr><td><code>next_run_at</code></td><td><code>datetime</code></td><td>Next scheduled execution</td></tr>
+          <tr><td><code>last_run_at</code></td><td><code>datetime</code></td><td>Last execution time</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box">
+      <h3>Cron Expression Examples</h3>
+      <table>
+        <thead><tr><th>Expression</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>0 9 * * *</code></td><td>Every day at 9:00 AM</td></tr>
+          <tr><td><code>0 9 * * 1-5</code></td><td>Weekdays at 9:00 AM</td></tr>
+          <tr><td><code>0 9,17 * * *</code></td><td>Every day at 9:00 AM and 5:00 PM</td></tr>
+          <tr><td><code>0 */2 * * *</code></td><td>Every 2 hours</td></tr>
+          <tr><td><code>0 9 1 * *</code></td><td>First day of every month at 9:00 AM</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="queue">
+      <h3>Planned: Queue Management</h3>
+      <h4>GET /api/v1/schedules/queue/</h4>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">View upcoming scheduled posts in the queue.</p>
+      <pre>{
+  <span class="key">"upcoming"</span>: [
+    {
+      <span class="key">"schedule_id"</span>: <span class="string">"schedule-uuid"</span>,
+      <span class="key">"schedule_name"</span>: <span class="string">"Daily Morning Post"</span>,
+      <span class="key">"scheduled_at"</span>: <span class="string">"2024-01-16T09:00:00Z"</span>,
+      <span class="key">"platforms"</span>: [<span class="string">"twitter"</span>, <span class="string">"linkedin"</span>]
+    }
+  ],
+  <span class="key">"total_scheduled"</span>: <span class="number">15</span>,
+  <span class="key">"next_24h"</span>: <span class="number">3</span>
+}</pre>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>
