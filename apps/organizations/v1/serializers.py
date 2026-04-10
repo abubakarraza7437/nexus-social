@@ -1,11 +1,3 @@
-"""
-Organizations v1 — Serializers
-================================
-Moved here from apps/organizations/serializers.py (the root file is now a
-backward-compat shim that re-exports everything from this module).
-
-No logic changes from the original — this is the canonical v1 contract.
-"""
 import re
 
 from rest_framework import serializers

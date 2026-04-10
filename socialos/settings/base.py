@@ -1,26 +1,11 @@
-"""
-SocialOS — Base Settings
-========================
-Shared across all environments. Never used directly; always imported by an
-environment-specific module (development / staging / production).
-
-Configuration is read from environment variables using python-decouple,
-which reads from a .env file or the process environment.
-"""
 from datetime import timedelta
 from pathlib import Path
 
 from decouple import Csv, config, UndefinedValueError
 
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
-# BASE_DIR → project root (the directory containing manage.py)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# ---------------------------------------------------------------------------
 # Environment & Security
-# ---------------------------------------------------------------------------
 ENVIRONMENT: str = config("ENVIRONMENT", default="development").lower()
 ENV_PREFIX = "PROD_" if ENVIRONMENT == "production" else ("STAG_" if ENVIRONMENT == "staging" else "")
 
@@ -45,9 +30,7 @@ if ENVIRONMENT == "production":
     DEBUG = False
 ALLOWED_HOSTS: list[str] = config("ALLOWED_HOSTS", default="", cast=Csv())
 
-# ---------------------------------------------------------------------------
 # Application Definition — django-tenants schema-per-tenant architecture
-# ---------------------------------------------------------------------------
 # SHARED_APPS: tables created only in the public schema (users, orgs, tokens).
 # django_tenants must be first.
 SHARED_APPS = [
@@ -156,15 +139,11 @@ TEMPLATES = [
     },
 ]
 
-# ---------------------------------------------------------------------------
 # ASGI / WSGI
-# ---------------------------------------------------------------------------
 ASGI_APPLICATION = "socialos.asgi.application"
 WSGI_APPLICATION = "socialos.wsgi.application"
 
-# ---------------------------------------------------------------------------
 # Database — PostgreSQL 16
-# ---------------------------------------------------------------------------
 ENGINE = env_var("SQL_ENGINE", "django_tenants.postgresql_backend")
 NAME = env_var("DB_NAME", default="socialos")
 USER = env_var("DB_USER", default="socialos")
@@ -198,24 +177,18 @@ DATABASES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# ---------------------------------------------------------------------------
 # Custom User Model
-# ---------------------------------------------------------------------------
 AUTH_USER_MODEL = "auth_core.User"
 
-# ---------------------------------------------------------------------------
 # Authentication Backends
 # axes.backends.AxesStandaloneBackend must be FIRST so it can reject locked accounts
 # before Django's backend even tries to authenticate.
-# ---------------------------------------------------------------------------
 AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesStandaloneBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-# ---------------------------------------------------------------------------
 # Password Validation
-# ---------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -224,10 +197,8 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# ---------------------------------------------------------------------------
 # Caching — Redis
 # DB 1 reserved for Django cache (DB 0 = Celery broker, DB 2 = Channels)
-# ---------------------------------------------------------------------------
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -243,18 +214,14 @@ CACHES = {
     }
 }
 
-# ---------------------------------------------------------------------------
 # Sessions
-# ---------------------------------------------------------------------------
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 SESSION_COOKIE_AGE = 86400 * 7   # 7 days
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 
-# ---------------------------------------------------------------------------
 # Django Channels — WebSocket layer (Redis DB 2)
-# ---------------------------------------------------------------------------
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -266,9 +233,7 @@ CHANNEL_LAYERS = {
     }
 }
 
-# ---------------------------------------------------------------------------
 # Django REST Framework
-# ---------------------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -305,23 +270,13 @@ REST_FRAMEWORK = {
     ],
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%SZ",
     "DATE_FORMAT": "%Y-%m-%d",
-    # ---------------------------------------------------------------------------
-    # URL-path versioning (/api/v1/..., /api/v2/...)
-    # DRF reads the version from the URL and exposes it as request.version.
-    # Views can branch on request.version when v1/v2 behaviour diverges.
-    # NotAcceptable (406) is raised for unrecognised versions automatically.
-    # ---------------------------------------------------------------------------
     "DEFAULT_VERSIONING_CLASS": "api.versioning.SocialOSVersioning",
     "DEFAULT_VERSION": "v1",
     "ALLOWED_VERSIONS": ["v1", "v2"],
     "VERSION_PARAM": "version",
 }
 
-# ---------------------------------------------------------------------------
 # JWT — Simple JWT (RS256 in production, HS256 in development)
-# RS256 allows public-key verification (e.g., by edge proxies) without the
-# private key being distributed.
-# ---------------------------------------------------------------------------
 SIMPLE_JWT: dict = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
@@ -351,9 +306,7 @@ SIMPLE_JWT: dict = {
     "JTI_CLAIM": "jti",
 }
 
-# ---------------------------------------------------------------------------
-# drf-spectacular (OpenAPI / Swagger)
-# ---------------------------------------------------------------------------
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "SocialOS API",
     "DESCRIPTION": (
@@ -385,9 +338,7 @@ SPECTACULAR_SETTINGS = {
     "PREPROCESSING_HOOKS": [],
 }
 
-# ---------------------------------------------------------------------------
-# CORS — django-cors-headers
-# ---------------------------------------------------------------------------
+
 CORS_ALLOWED_ORIGINS: list[str] = config(
     "CORS_ALLOWED_ORIGINS",
     default=config("FRONTEND_URL", default="http://localhost:3000"),
@@ -407,9 +358,6 @@ CORS_ALLOW_HEADERS = [
     "x-org-slug",     # Optional: tenant hint from frontend
 ]
 
-# ---------------------------------------------------------------------------
-# django-axes — Brute Force Protection
-# ---------------------------------------------------------------------------
 AXES_FAILURE_LIMIT = 5           # Lock after 5 failed login attempts
 AXES_COOLOFF_TIME = timedelta(hours=1)
 AXES_RESET_ON_SUCCESS = True     # Unlock on successful login
@@ -417,9 +365,6 @@ AXES_LOCKOUT_PARAMETERS = ["ip_address", "username"]
 AXES_USERNAME_FORM_FIELD = "email"
 AXES_ENABLE_ADMIN = True
 
-# ---------------------------------------------------------------------------
-# Celery — Task Queue
-# ---------------------------------------------------------------------------
 CELERY_BROKER_URL: str = env_var("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = "django-db"   # Persisted results via django-celery-results
 CELERY_CACHE_BACKEND = "default"
@@ -462,10 +407,6 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-# ---------------------------------------------------------------------------
-# Celery — Queue Routing
-# Tasks are routed to dedicated queues so workers can be scaled independently.
-# ---------------------------------------------------------------------------
 CELERY_TASK_ROUTES = {
     "apps.publisher.tasks.publish_post":             {"queue": "publish"},
     "apps.scheduler.tasks.process_recurring_schedules": {"queue": "scheduler"},
@@ -479,14 +420,8 @@ CELERY_TASK_ROUTES = {
 # Default queue for unrouted tasks
 CELERY_TASK_DEFAULT_QUEUE = "default"
 
-# ---------------------------------------------------------------------------
-# Celery Results (django-celery-results)
-# ---------------------------------------------------------------------------
 DJANGO_CELERY_RESULTS_TASK_ID_MAX_LENGTH = 191
 
-# ---------------------------------------------------------------------------
-# Static & Media Files
-# ---------------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
@@ -495,17 +430,13 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# ---------------------------------------------------------------------------
 # Internationalisation
-# ---------------------------------------------------------------------------
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True   # All datetimes are UTC-aware — convert at UI edge only.
 
-# ---------------------------------------------------------------------------
 # Email
-# ---------------------------------------------------------------------------
 EMAIL_BACKEND = config(
     "EMAIL_BACKEND",
     default="django.core.mail.backends.console.EmailBackend",
@@ -518,16 +449,12 @@ EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="SocialOS <noreply@socialos.io>")
 MAILTRAP_API_KEY: str = config("MAILTRAP_API_KEY", default="")
 
-# ---------------------------------------------------------------------------
 # Security Headers (base values — strengthened in production.py)
-# ---------------------------------------------------------------------------
 X_FRAME_OPTIONS = "DENY"
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# ---------------------------------------------------------------------------
 # Social OAuth Credentials
-# ---------------------------------------------------------------------------
 FACEBOOK_APP_ID: str = config("FACEBOOK_APP_ID", default="")
 FACEBOOK_APP_SECRET: str = config("FACEBOOK_APP_SECRET", default="")
 FACEBOOK_CALLBACK_URL: str = config("FACEBOOK_CALLBACK_URL", default="")
@@ -540,40 +467,28 @@ LINKEDIN_CLIENT_ID: str = config("LINKEDIN_CLIENT_ID", default="")
 LINKEDIN_CLIENT_SECRET: str = config("LINKEDIN_CLIENT_SECRET", default="")
 LINKEDIN_CALLBACK_URL: str = config("LINKEDIN_CALLBACK_URL", default="")
 
-# ---------------------------------------------------------------------------
 # Token Encryption (AES-256-GCM for OAuth tokens stored at rest)
-# ---------------------------------------------------------------------------
 TOKEN_ENCRYPTION_KEY: str = config("TOKEN_ENCRYPTION_KEY", default="")
 
-# ---------------------------------------------------------------------------
 # AI Providers
-# ---------------------------------------------------------------------------
 OPENAI_API_KEY: str = config("OPENAI_API_KEY", default="")
 ANTHROPIC_API_KEY: str = config("ANTHROPIC_API_KEY", default="")
 
-# ---------------------------------------------------------------------------
 # Stripe (Billing)
-# ---------------------------------------------------------------------------
 STRIPE_SECRET_KEY: str = env_var("STRIPE_SECRET_KEY", default="")
 STRIPE_PUBLISHABLE_KEY: str = env_var("STRIPE_PUBLISHABLE_KEY", default="")
 STRIPE_WEBHOOK_SECRET: str = env_var("STRIPE_WEBHOOK_SECRET", default="")
 
-# ---------------------------------------------------------------------------
 # Sentry (Error Tracking)
-# ---------------------------------------------------------------------------
 SENTRY_DSN: str = env_var("SENTRY_DSN", default="")
 SENTRY_ENVIRONMENT: str = env_var("SENTRY_ENVIRONMENT", default="development")
 
-# ---------------------------------------------------------------------------
 # Kafka / Redis Streams Event Bus
-# ---------------------------------------------------------------------------
 USE_KAFKA: bool = env_var("USE_KAFKA", default=False, cast=bool)
 KAFKA_BOOTSTRAP_SERVERS: str = env_var("KAFKA_BOOTSTRAP_SERVERS", default="localhost:9092")
 KAFKA_SECURITY_PROTOCOL: str = env_var("KAFKA_SECURITY_PROTOCOL", default="PLAINTEXT")
 
-# ---------------------------------------------------------------------------
 # Plan Limits (enforced at request time via OrgPlanThrottle + plan_limits JSON)
-# ---------------------------------------------------------------------------
 PLAN_LIMITS = {
     "free": {
         "social_accounts": 3,
@@ -623,9 +538,7 @@ PLAN_LIMITS = {
     },
 }
 
-# ---------------------------------------------------------------------------
 # Logging
-# ---------------------------------------------------------------------------
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -694,9 +607,7 @@ LOGGING = {
     },
 }
 
-# ---------------------------------------------------------------------------
 # Jazzmin
-# ---------------------------------------------------------------------------
 JAZZMIN_SETTINGS = {
     "site_title": "SocialOS Admin",
 

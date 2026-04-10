@@ -1,15 +1,3 @@
-"""
-Organizations — Models
-======================
-Organization is the django-tenants tenant root. Each org maps 1-to-1 with
-an isolated PostgreSQL schema.
-
-Models (all in the public schema via SHARED_APPS):
-  Organization          — TenantMixin subclass; the SaaS tenant
-  Domain                — DomainMixin subclass; maps hostnames → tenant
-  OrganizationMember    — join table: user ↔ organization with a role
-  OrganizationInvitation — pending email invitations to join an org
-"""
 import secrets
 import uuid
 from datetime import timedelta
@@ -27,18 +15,6 @@ from apps.organizations.schemas import PlanLimits
 # ---------------------------------------------------------------------------
 
 class Organization(TenantMixin):
-    """
-    SaaS tenant — each Organization maps to an isolated PostgreSQL schema.
-
-    TenantMixin contributes:
-      • schema_name     — unique CharField (the PostgreSQL schema identifier)
-      • auto_create_schema — class attr; when True, TenantMixin.save() creates
-                            the schema automatically on first save.
-      • Schema lifecycle helpers (create_schema, drop_schema, etc.)
-
-    plan_limits is denormalized from settings.PLAN_LIMITS at creation /
-    plan change so limit checks are a single attribute read with no joins.
-    """
 
     class Plan(models.TextChoices):
         FREE = "free", "Free"
@@ -103,11 +79,6 @@ class Organization(TenantMixin):
             return False  # None → unlimited
         return current_count >= limit
 
-    # ------------------------------------------------------------------
-    # save() — auto-populate plan_limits; then delegate to TenantMixin
-    # (which in turn calls models.Model.save() and creates the schema).
-    # ------------------------------------------------------------------
-
     def get_plan_limits(self) -> PlanLimits:
         """Return the current plan limits as a validated Pydantic model."""
         return PlanLimits.model_validate(self.plan_limits)
@@ -130,19 +101,7 @@ class Organization(TenantMixin):
             return True
 
 
-# ---------------------------------------------------------------------------
-# Domain  (required by django-tenants; referenced via TENANT_DOMAIN_MODEL)
-# ---------------------------------------------------------------------------
-
 class Domain(DomainMixin):
-    """
-    Maps a domain / subdomain to an Organization tenant.
-
-    DomainMixin contributes:
-      • domain     — unique CharField (the hostname, e.g. "acme.socialos.io")
-      • tenant     — ForeignKey → TENANT_MODEL
-      • is_primary — BooleanField (True for the canonical domain)
-    """
 
     class Meta:
         db_table = "organization_domains"
@@ -153,17 +112,7 @@ class Domain(DomainMixin):
         return self.domain
 
 
-# ---------------------------------------------------------------------------
-# OrganizationMember  (user ↔ org join table)
-# ---------------------------------------------------------------------------
-
 class OrganizationMember(models.Model):
-    """
-    Many-to-many between User ↔ Organization with a role.
-
-    Role hierarchy (descending privilege): OWNER > ADMIN > MEMBER.
-    Enforced in permission classes; the DB stores the string value.
-    """
 
     class Role(models.TextChoices):
         OWNER = "owner", "Owner"
@@ -209,28 +158,7 @@ class OrganizationMember(models.Model):
         return f"{self.user} → {self.organization} [{self.role}]"
 
 
-# ---------------------------------------------------------------------------
-# JoinRequest  (user-initiated request to join an existing org)
-# ---------------------------------------------------------------------------
-
 class JoinRequest(models.Model):
-    """
-    Represents a user-initiated request to join an existing Organization.
-
-    Security model (Slack/Notion-style):
-      - Users cannot auto-join organizations based on name/domain.
-      - A JoinRequest must be explicitly approved by an OWNER or ADMIN.
-      - Only one pending request per user+org pair is allowed.
-
-    Lifecycle:
-      1. User submits org name → org exists → user confirms join request.
-      2. JoinRequest created with status=PENDING.
-      3. Notification sent to org OWNER/ADMIN.
-      4. OWNER/ADMIN approves → OrganizationMember created, status=APPROVED.
-         OR OWNER/ADMIN rejects → status=REJECTED.
-
-    Requests expire after 30 days if not acted upon.
-    """
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -313,31 +241,11 @@ class JoinRequest(models.Model):
         return self.status == self.Status.PENDING and not self.is_expired
 
 
-# ---------------------------------------------------------------------------
-# Invitation expiry callable — module-level so it is picklable for migrations.
-# ---------------------------------------------------------------------------
-
 def _invitation_expiry():
     return timezone.now() + timedelta(days=7)
 
 
-# ---------------------------------------------------------------------------
-# OrganizationInvitation  (pending email invite to join an org)
-# ---------------------------------------------------------------------------
-
 class OrganizationInvitation(models.Model):
-    """
-    Represents a pending invitation for a specific email address to join an
-    Organization with a given role.
-
-    Lifecycle:
-      1. OWNER / ADMIN calls invite endpoint → invitation created, email sent.
-      2. Invitee registers (or logs in) and calls join endpoint with token.
-      3. OrganizationMember is created; is_used flipped to True.
-
-    Tokens expire after 7 days.  A new invitation for the same email+org
-    invalidates all prior pending invitations for that pair.
-    """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     organization = models.ForeignKey(

@@ -1,21 +1,3 @@
-"""
-Utils — Pagination
-===================
-Standardises paginated list responses to the envelope format:
-
-    {
-        "data": [ ... ],
-        "meta": {
-            "pagination": {
-                "page":        1,
-                "page_size":   20,
-                "total_count": 148,
-                "total_pages": 8
-            }
-        },
-        "errors": []
-    }
-"""
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 

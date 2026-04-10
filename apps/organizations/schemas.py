@@ -1,9 +1,3 @@
-"""
-Organizations · Pydantic schemas
-=================================
-Typed, validated structure for Organization JSON fields.
-"""
-
 from __future__ import annotations
 
 from typing import Literal
@@ -12,18 +6,6 @@ from pydantic import BaseModel, Field
 
 
 class PlanLimits(BaseModel):
-    """
-    Validated snapshot of a subscription plan's feature limits.
-
-    Stored in Organization.plan_limits (JSONField). A value of None means
-    the limit is unlimited for that plan tier.
-
-    Persist with:
-        org.plan_limits = PlanLimits.model_validate(settings.PLAN_LIMITS[plan]).model_dump(mode="json")
-
-    Read back with:
-        limits = PlanLimits.model_validate(org.plan_limits)
-    """
 
     social_accounts: int | None = Field(
         default=None,

@@ -1,11 +1,3 @@
-"""
-SocialOS — Staging Settings
-============================
-Mirrors production as closely as possible, but with:
-- DEBUG allowed for developers to inspect errors.
-- Relaxed security headers.
-- Same S3/Redis/PG topology as production.
-"""
 from .production import *  # noqa: F401, F403
 from .base import env_var
 

@@ -1,22 +1,3 @@
-"""
-API Versioning
-==============
-URL-path versioning scheme for the SocialOS API.
-
-Supported versions
-------------------
-  v1 — Initial stable release. Will be sunset after v2 is widely adopted.
-  v2 — Enhanced payloads, richer responses, new endpoints.
-
-DRF detects the active version from the URL path segment and exposes it via
-``request.version`` so any view can branch behaviour if needed:
-
-    if request.version == V2:
-        ...
-
-The versioning class is registered in REST_FRAMEWORK["DEFAULT_VERSIONING_CLASS"]
-so it applies automatically to every view without per-view boilerplate.
-"""
 from rest_framework.versioning import URLPathVersioning
 
 V1 = "v1"

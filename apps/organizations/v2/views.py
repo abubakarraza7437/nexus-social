@@ -1,23 +1,3 @@
-"""
-Organizations v2 — Views
-=========================
-Extends v1 views with richer data and adds new endpoints.
-
-v2 changes
-----------
-``OrganizationListViewV2``   — annotates queryset with member_count (no N+1).
-``OrganizationDetailViewV2`` — same annotation; uses OrganizationSerializerV2.
-``MemberListViewV2``         — adds joined_at + invited_by_email via v2 serializer.
-``OrganizationStatsView``    — NEW: GET /api/v2/orgs/{id}/stats/
-
-Unchanged endpoints (re-exported from v1)
-------------------------------------------
-All write/mutation endpoints are identical in v1 and v2 — no need to override:
-  InviteView, JoinOrganizationView, MemberDetailView,
-  CheckOrCreateOrganizationView, RequestJoinView, JoinRequestListView,
-  ApproveJoinRequestView, RejectJoinRequestView, MyJoinRequestsView,
-  CancelJoinRequestView
-"""
 from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework.generics import ListAPIView, RetrieveAPIView

@@ -1,24 +1,3 @@
-"""
-Organizations v2 — Serializers
-================================
-Extends v1 serializers with richer read payloads.
-
-Changes vs v1
--------------
-``OrganizationSerializerV2``
-    Adds ``member_count`` (annotated), ``updated_at``, and ``plan_limits``
-    so clients can display plan caps without a separate settings call.
-
-``OrganizationMemberSerializerV2``
-    Adds ``joined_at`` (semantic alias for ``created_at``) and
-    ``invited_by_email`` (nullable — for invitation audit visibility).
-
-``OrganizationStatsSerializer`` (NEW)
-    Response shape for GET /api/v2/orgs/{id}/stats/.
-
-All input/write serializers are re-exported unchanged — request contracts
-are identical in v1 and v2.
-"""
 from rest_framework import serializers
 
 from ..models import Organization, OrganizationMember

@@ -1,28 +1,3 @@
-"""
-Organizations — Tenant Isolation Middleware
-============================================
-Sets the PostgreSQL session variable `app.current_org_id` on every request
-that belongs to an authenticated, org-scoped user.
-
-This is consumed by the Row-Level Security (RLS) policy on every tenant table:
-
-    CREATE POLICY tenant_isolation ON posts
-    USING (org_id = current_setting('app.current_org_id')::uuid);
-
-Why SET LOCAL?
-  SET LOCAL is transaction-scoped — it resets automatically when the
-  transaction ends (i.e. at the end of the request).  This guarantees
-  isolation even if a connection is reused from PgBouncer's pool.
-
-Order in MIDDLEWARE list matters:
-  Must run AFTER AuthenticationMiddleware (request.user must be populated),
-  but DRF authentication runs inside the view, not in middleware.
-
-  Solution: `request.org` is attached by the JWT authentication flow
-  (see apps.auth_core.authentication).  This middleware checks for it
-  defensively — if absent, it's a no-op and the request proceeds without
-  RLS enforcement (which is fine for public/unauthenticated endpoints).
-"""
 import logging
 
 from django.db import connection

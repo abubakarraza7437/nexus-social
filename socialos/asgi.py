@@ -1,15 +1,3 @@
-"""
-SocialOS — ASGI Configuration
-================================
-Handles both HTTP (Django views) and WebSocket (Django Channels) connections.
-
-WebSocket endpoints:
-  ws/events/   → EventConsumer   (post status, notifications)
-  ws/inbox/    → InboxConsumer   (real-time messaging)
-
-Scaling: All Channels instances share the same Redis channel layer, so
-horizontal scaling only requires pointing all instances at the same Redis cluster.
-"""
 import os
 
 from django.core.asgi import get_asgi_application

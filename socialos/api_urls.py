@@ -1,8 +1,3 @@
-"""
-SocialOS — API v1 URL Dispatcher
-==================================
-Each app owns its URL module; this file is the single import point.
-"""
 from django.urls import include, path
 
 urlpatterns = [

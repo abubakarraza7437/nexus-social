@@ -1,11 +1,3 @@
-"""
-Scheduler · Models
-==================
-RecurringSchedule stores cron-based rules that fire periodically to
-spawn new Posts. The Celery Beat worker polls for active schedules
-where next_run_at <= now().
-"""
-
 import uuid
 import zoneinfo
 from datetime import datetime as _dt
@@ -18,10 +10,6 @@ from django.utils import timezone
 
 from apps.organizations.models import Organization
 
-
-# --------------------------------------------------------------------------- #
-# Validators                                                                  #
-# --------------------------------------------------------------------------- #
 
 def validate_cron_expression(value: str) -> None:
     """Reject any expression croniter cannot parse."""
@@ -43,30 +31,11 @@ def validate_timezone(value: str) -> None:
         )
 
 
-# --------------------------------------------------------------------------- #
-# Model                                                                       #
-# --------------------------------------------------------------------------- #
-
 class RecurringSchedule(models.Model):
-    """
-    A cron-based rule that fires on a repeating schedule to spawn Posts.
-
-    Lifecycle
-    ---------
-    ACTIVE  → scheduler task fires → Post created → next_run_at advanced
-    ACTIVE  → end_at passed / max_runs reached → deactivate() → INACTIVE
-    INACTIVE → manually re-enabled → ACTIVE
-
-    next_run_at is always stored as UTC. The timezone field is used only
-    when evaluating the cron expression — so "0 9 * * 1" (Monday 9 AM)
-    means 9 AM in the schedule's configured timezone, not 9 AM UTC.
-    """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # ----------------------------------------------------------------------- #
-    # Tenant ownership                                                        #
-    # ----------------------------------------------------------------------- #
+    # Tenant ownership
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
@@ -84,9 +53,7 @@ class RecurringSchedule(models.Model):
         ),
     )
 
-    # ----------------------------------------------------------------------- #
-    # Identity                                                                 #
-    # ----------------------------------------------------------------------- #
+    # Identity
     title = models.CharField(
         max_length=255,
         help_text="Human-readable label, e.g. 'Monday morning motivational post'.",
@@ -96,9 +63,7 @@ class RecurringSchedule(models.Model):
         help_text="Optional notes about this schedule's purpose.",
     )
 
-    # ----------------------------------------------------------------------- #
-    # Schedule definition                                                      #
-    # ----------------------------------------------------------------------- #
+    # Schedule definition
     cron_expression = models.CharField(
         max_length=100,
         validators=[validate_cron_expression],
@@ -130,9 +95,7 @@ class RecurringSchedule(models.Model):
     #     help_text="Post template to clone when this schedule fires.",
     # )
 
-    # ----------------------------------------------------------------------- #
-    # Execution state                                                          #
-    # ----------------------------------------------------------------------- #
+    # Execution state
     is_active = models.BooleanField(
         default=True,
         db_index=True,
@@ -153,9 +116,7 @@ class RecurringSchedule(models.Model):
         help_text="Total number of times this schedule has fired successfully.",
     )
 
-    # ----------------------------------------------------------------------- #
-    # Optional stop conditions                                                 #
-    # ----------------------------------------------------------------------- #
+    # Optional stop conditions
     end_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -167,9 +128,7 @@ class RecurringSchedule(models.Model):
         help_text="If set, the schedule deactivates itself after firing this many times total.",
     )
 
-    # ----------------------------------------------------------------------- #
-    # Timestamps                                                               #
-    # ----------------------------------------------------------------------- #
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -191,24 +150,10 @@ class RecurringSchedule(models.Model):
     def __str__(self) -> str:
         return f"{self.title} ({self.cron_expression} {self.timezone})"
 
-    # ----------------------------------------------------------------------- #
-    # Cron helpers                                                             #
-    # ----------------------------------------------------------------------- #
+    # Cron helpers
 
     def compute_next_run(self, after: _dt | None = None) -> _dt:
-        """
-        Return the next UTC datetime this cron expression will fire.
 
-        Uses the schedule's configured timezone so that DST transitions
-        and local business hours are respected correctly.
-
-        Args:
-            after: Compute the next occurrence after this UTC-aware datetime.
-                   Defaults to now().
-
-        Returns:
-            UTC-aware datetime of the next scheduled fire.
-        """
         after_utc = after or timezone.now()
         tz = zoneinfo.ZoneInfo(self.timezone)
 
@@ -227,19 +172,11 @@ class RecurringSchedule(models.Model):
         self.next_run_at = self.compute_next_run(after=after)
         self.save(update_fields=["next_run_at", "updated_at"])
 
-    # ----------------------------------------------------------------------- #
-    # Stop-condition helpers                                                   #
-    # ----------------------------------------------------------------------- #
+    # Stop-condition helpers
 
     @property
     def is_exhausted(self) -> bool:
-        """
-        True if a stop condition has been reached.
 
-        Does NOT mutate is_active — the scheduler task is responsible for
-        calling deactivate() after confirming exhaustion so the state
-        change is deliberate and logged.
-        """
         if self.end_at and timezone.now() >= self.end_at:
             return True
         if self.max_runs is not None and self.run_count >= self.max_runs:

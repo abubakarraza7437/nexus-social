@@ -1,8 +1,3 @@
-"""
-SocialOS — Django Channels WebSocket URL Routing
-==================================================
-These patterns are consumed by the ProtocolTypeRouter in asgi.py.
-"""
 from django.urls import re_path
 
 from apps.inbox.consumers import InboxConsumer
