@@ -192,7 +192,6 @@ class JoinOrganizationView(APIView):
         )
 
 
-
 class MemberListView(ListAPIView):
     """GET /api/v1/orgs/{id}/members/ — list active members; requester must be a member."""
 
