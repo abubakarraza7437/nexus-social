@@ -212,7 +212,7 @@ class TestInviteView:
     ) -> None:
         """Owner can invite new members."""
         url = f"/api/v1/orgs/{organization.id}/invite/"
-        payload = {"email": "newmember@example.com", "role": "member"}
+        payload = {"email": "newmember@example.com", "role": "viewer"}
 
         with patch("apps.auth_core.services.send_invitation_email"):
             response = authenticated_client.post(url, payload, format="json")
@@ -233,28 +233,28 @@ class TestInviteView:
         """Admin can invite new members."""
         api_client.force_authenticate(user=other_user)
         url = f"/api/v1/orgs/{organization.id}/invite/"
-        payload = {"email": "newmember@example.com", "role": "member"}
+        payload = {"email": "newmember@example.com", "role": "viewer"}
 
         with patch("apps.auth_core.services.send_invitation_email"):
             response = api_client.post(url, payload, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
 
-    def test_invite_as_member_forbidden(
+    def test_invite_as_viewer_forbidden(
         self,
         api_client: APIClient,
         other_user: User,
         organization: Organization,
     ) -> None:
-        """Regular member cannot invite."""
+        """Regular viewer cannot invite."""
         OrganizationMemberFactory(
             user=other_user,
             organization=organization,
-            role=OrganizationMember.Role.MEMBER,
+            role=OrganizationMember.Role.VIEWER,
         )
         api_client.force_authenticate(user=other_user)
         url = f"/api/v1/orgs/{organization.id}/invite/"
-        payload = {"email": "newmember@example.com", "role": "member"}
+        payload = {"email": "newmember@example.com", "role": "viewer"}
 
         response = api_client.post(url, payload, format="json")
 
@@ -270,7 +270,7 @@ class TestInviteView:
     ) -> None:
         """Cannot invite someone who is already a member."""
         url = f"/api/v1/orgs/{organization.id}/invite/"
-        payload = {"email": other_user.email, "role": "member"}
+        payload = {"email": other_user.email, "role": "viewer"}
 
         response = authenticated_client.post(url, payload, format="json")
 
@@ -297,7 +297,7 @@ class TestJoinOrganizationView:
         invitation = OrganizationInvitation.objects.create(
             organization=organization,
             email=user.email,
-            role=OrganizationMember.Role.MEMBER,
+            role=OrganizationMember.Role.VIEWER,
         )
         payload = {"token": invitation.token}
 
@@ -326,7 +326,7 @@ class TestJoinOrganizationView:
         invitation = OrganizationInvitation.objects.create(
             organization=organization,
             email=user.email,
-            role=OrganizationMember.Role.MEMBER,
+            role=OrganizationMember.Role.VIEWER,
         )
         invitation.expires_at = timezone.now() - timedelta(days=1)
         invitation.save()
@@ -346,7 +346,7 @@ class TestJoinOrganizationView:
         invitation = OrganizationInvitation.objects.create(
             organization=organization,
             email="different@example.com",
-            role=OrganizationMember.Role.MEMBER,
+            role=OrganizationMember.Role.VIEWER,
         )
         payload = {"token": invitation.token}
 
@@ -365,7 +365,7 @@ class TestJoinOrganizationView:
         invitation = OrganizationInvitation.objects.create(
             organization=organization,
             email=user.email,
-            role=OrganizationMember.Role.MEMBER,
+            role=OrganizationMember.Role.VIEWER,
         )
         payload = {"token": invitation.token}
 
@@ -432,13 +432,13 @@ class TestMemberDetailView:
     ) -> None:
         """Owner can update member role."""
         url = f"/api/v1/orgs/{organization.id}/members/{admin_membership.id}/"
-        payload = {"role": "member"}
+        payload = {"role": "viewer"}
 
         response = authenticated_client.patch(url, payload, format="json")
 
         assert response.status_code == status.HTTP_200_OK
         admin_membership.refresh_from_db()
-        assert admin_membership.role == OrganizationMember.Role.MEMBER
+        assert admin_membership.role == OrganizationMember.Role.VIEWER
 
     def test_update_own_role_forbidden(
         self,
@@ -470,7 +470,7 @@ class TestMemberDetailView:
         member = OrganizationMemberFactory(
             user=third_user,
             organization=organization,
-            role=OrganizationMember.Role.MEMBER,
+            role=OrganizationMember.Role.VIEWER,
         )
 
         api_client.force_authenticate(user=other_user)

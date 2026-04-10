@@ -36,5 +36,5 @@ class OrganizationMemberFactory(factory.django.DjangoModelFactory):
 
     organization = factory.SubFactory(OrganizationFactory)
     user = factory.SubFactory(UserFactory)
-    role = OrganizationMember.Role.MEMBER
+    role = OrganizationMember.Role.VIEWER
     is_active = True

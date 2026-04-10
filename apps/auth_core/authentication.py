@@ -33,9 +33,6 @@ class JWTAuthenticationWithContext(JWTAuthentication):
                     "Token is not valid for this organization."
                 )
 
-        # ------------------------------------------------------------------ #
-        # Attach context to request                                           #
-        # ------------------------------------------------------------------ #
         role = validated_token.get("role")
         org_id = validated_token.get("org")
 

@@ -1,14 +1,3 @@
-"""
-Publisher platform registry
-===========================
-Maps PostTarget.Platform values to their BasePublisher implementation.
-
-To add a new platform:
-  1. Create apps/publisher/platforms/<name>.py with a class extending BasePublisher.
-  2. Add an entry to REGISTRY below.
-
-Falls back to MockPublisher for unregistered platforms and logs a warning.
-"""
 import logging
 
 from apps.publisher.platforms.mock import MockPublisher

@@ -1,29 +1,7 @@
-"""
-Auth Core — Rate Limiting
-==========================
-Two throttle classes:
-
-AuthRateThrottle   — for public auth endpoints (signup, login, forgot-password,
-                     resend-verification). Keyed by IP. Generous enough for
-                     normal use, tight enough to slow brute-force / abuse.
-                     Rates: 20/hour for most, 5/hour for resend-verification.
-
-OrgPlanThrottle    — per-organization API throttle based on subscription plan.
-                     Applied to authenticated tenant endpoints only.
-                     free → 100/day, pro → 10 000/day, business → 50 000/day.
-"""
 from rest_framework.throttling import SimpleRateThrottle
 
 
 class AuthRateThrottle(SimpleRateThrottle):
-    """
-    IP-based throttle for public auth endpoints.
-
-    Apply via throttle_classes = [AuthRateThrottle] on each view.
-    Override `scope` on the view's throttle to get different rates:
-      "auth"               → 20/hour  (signup, login, forgot-password, reset-password)
-      "auth_resend"        → 5/hour   (resend-verification — stricter to limit spam)
-    """
 
     scope = "auth"
 
@@ -39,12 +17,6 @@ class ResendVerificationThrottle(AuthRateThrottle):
 
 
 class OrgPlanThrottle(SimpleRateThrottle):
-    """
-    Per-organization throttle keyed to the org's subscription plan.
-
-    Falls back to "100/day" for unauthenticated or plan-less requests.
-    The enterprise plan bypasses throttling entirely (returns True immediately).
-    """
 
     scope = "org_plan"
 
