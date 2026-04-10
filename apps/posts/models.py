@@ -1,13 +1,9 @@
 import uuid
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.utils import timezone
 from apps.organizations.models import Organization
 from apps.posts.schemas import PostTargetErrorPayload
-
-
-# TODO: Uncomment once the Content model is implemented in apps/content/models.py
-# from apps.content.models import Content
 
 
 class Post(models.Model):
@@ -77,26 +73,44 @@ class Post(models.Model):
         return f"Post {self.id} [{self.status}]"
 
     def sync_status(self) -> None:
+        """
+        Recompute and persist Post.status from its targets' statuses.
 
-        targets = list(self.targets.values_list("status", flat=True))
-        if not targets:
-            return
+        Uses select_for_update() on the Post row to prevent concurrent
+        mark_published()/mark_failed() calls from producing a stale read
+        and overwriting each other's result.
+        """
+        with transaction.atomic():
+            # Lock this Post row for the duration of the status computation.
+            post = Post.objects.select_for_update().get(pk=self.pk)
+            targets = list(post.targets.values_list("status", flat=True))
+            if not targets:
+                return
 
-        s = PostTarget.Status
-        if s.PUBLISHING in targets:
-            self.status = self.Status.PUBLISHING
-        elif all(t == s.PUBLISHED for t in targets):
-            self.status = self.Status.PUBLISHED
-            if not self.published_at:
-                self.published_at = timezone.now()
-        elif s.FAILED in targets:
-            self.status = self.Status.FAILED
-        elif s.SCHEDULED in targets:
-            self.status = self.Status.SCHEDULED
-        else:
-            self.status = self.Status.DRAFT
+            s = PostTarget.Status
+            if s.PUBLISHING in targets:
+                new_status = self.Status.PUBLISHING
+                new_published_at = post.published_at
+            elif all(t == s.PUBLISHED for t in targets):
+                new_status = self.Status.PUBLISHED
+                new_published_at = post.published_at or timezone.now()
+            elif s.FAILED in targets:
+                new_status = self.Status.FAILED
+                new_published_at = post.published_at
+            elif s.SCHEDULED in targets:
+                new_status = self.Status.SCHEDULED
+                new_published_at = post.published_at
+            else:
+                new_status = self.Status.DRAFT
+                new_published_at = post.published_at
 
-        self.save(update_fields=["status", "published_at", "updated_at"])
+            post.status = new_status
+            post.published_at = new_published_at
+            post.save(update_fields=["status", "published_at", "updated_at"])
+
+        # Reflect the persisted values onto self so callers see the updated state.
+        self.status = post.status
+        self.published_at = post.published_at
 
 
 class PostTarget(models.Model):

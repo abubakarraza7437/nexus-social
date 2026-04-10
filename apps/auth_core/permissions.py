@@ -1,14 +1,3 @@
-"""
-Auth Core — RBAC Permission Classes
-=====================================
-Role hierarchy (highest → lowest):
-  owner > admin > editor > viewer
-
-Usage in ViewSets:
-  permission_classes = [IsAuthenticated, IsEditor]
-  permission_classes = [IsAuthenticated, IsAdmin]
-  permission_classes = [IsAuthenticated, IsOwner]
-"""
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -31,7 +20,7 @@ class HasOrgRole(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        # request.membership is attached by TenantIsolationMiddleware / JWT auth.
+        # request.membership is attached by the JWT authentication backend after token validation.
         membership = getattr(request, "membership", None)
         if not membership:
             return False

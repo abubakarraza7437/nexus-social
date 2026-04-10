@@ -133,7 +133,7 @@ class OrganizationStatsView(APIView):
           "plan_limits": { "max_members": 25, "max_posts": 500 }
         }
 
-    Permission: any active member (OWNER, ADMIN, or MEMBER).
+    Permission: any active member (OWNER, ADMIN, EDITOR, or VIEWER).
     """
 
     permission_classes = [IsAuthenticated]

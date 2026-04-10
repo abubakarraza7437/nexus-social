@@ -1,9 +1,3 @@
-"""
-Auth Core — Services
-====================
-Business-logic functions for user registration, organisation bootstrapping,
-and transactional email dispatch via Gmail SMTP.
-"""
 import logging
 import re
 import uuid
@@ -18,20 +12,8 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-# ---------------------------------------------------------------------------
-# Internal helpers
-# ---------------------------------------------------------------------------
-
 def _schema_name_from_base(base: str) -> str:
-    """
-    Derive a PostgreSQL-safe schema identifier from *base*.
 
-    Steps:
-      1. Lowercase, keep only [a-z0-9_].
-      2. Truncate to 20 characters.
-      3. Append "_" + 8 hex chars (uuid4 fragment) for uniqueness.
-      4. Ensure the result starts with a letter (prefix "org" if needed).
-    """
     sanitized = re.sub(r"[^a-z0-9_]", "", base.lower())[:20]
     suffix = uuid.uuid4().hex[:8]
     schema = f"{sanitized}_{suffix}"
@@ -41,14 +23,7 @@ def _schema_name_from_base(base: str) -> str:
 
 
 def _unique_slug(base: str) -> str:
-    """
-    Produce a URL-safe slug that is not already used by any Organization.
 
-    Steps:
-      1. Slugify *base* (replace non-alphanumeric runs with "-"), max 40 chars.
-      2. Append "-" + 6 hex chars.
-      3. Loop until the result is absent from Organization.objects.
-    """
     from apps.organizations.models import Organization  # avoid circular at module load
 
     from django.utils.text import slugify
@@ -60,24 +35,9 @@ def _unique_slug(base: str) -> str:
             return candidate
 
 
-# ---------------------------------------------------------------------------
-# Core service: register user + bootstrap personal organisation
-# ---------------------------------------------------------------------------
-
 @transaction.atomic
 def create_user(validated_data: dict) -> User:
-    """
-    Create a User and dispatch the email-verification token.
 
-    This is the standard signup path. Organisation creation is deferred to
-    the post-signup onboarding flow (POST /api/v1/orgs/check-or-create/).
-
-    Args:
-        validated_data: cleaned dict with keys ``email``, ``password``, ``name``.
-
-    Returns:
-        The newly-created :class:`~apps.auth_core.models.User` instance.
-    """
     from apps.auth_core.models import EmailVerificationToken
 
     email: str = validated_data["email"]
@@ -94,18 +54,7 @@ def create_user(validated_data: dict) -> User:
 
 @transaction.atomic
 def create_user_with_organization(validated_data: dict) -> User:
-    """
-    Atomically create a User and bootstrap a personal Organisation.
 
-    Retained for admin / internal tooling. The public signup flow uses
-    :func:`create_user` instead, deferring org creation to onboarding.
-
-    Args:
-        validated_data: cleaned dict with keys ``email``, ``password``, ``name``.
-
-    Returns:
-        The newly-created :class:`~apps.auth_core.models.User` instance.
-    """
     from apps.auth_core.models import EmailVerificationToken
     from apps.organizations.models import Domain, Organization, OrganizationMember
 
@@ -157,9 +106,7 @@ def create_user_with_organization(validated_data: dict) -> User:
     return user
 
 
-# ---------------------------------------------------------------------------
 # Email helpers (Gmail SMTP via Django's send_mail)
-# ---------------------------------------------------------------------------
 
 def _send_email(to_email: str, subject: str, html: str, text: str) -> None:
     """Send a transactional email through Django's configured SMTP backend."""
@@ -246,16 +193,7 @@ def send_org_deleted_email(user, org_name: str) -> bool:
         f"You are no longer a member of this organization."
     )
     try:
-        from django.core.mail import send_mail
-        from django.conf import settings
-        send_mail(
-            subject=f"Organization {org_name} deleted",
-            message=text,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            html_message=html,
-            fail_silently=False,
-        )
+        _send_email(user.email, f"Organization {org_name} deleted", html, text)
         return True
     except Exception:
         return False
@@ -265,23 +203,15 @@ def send_member_left_email(owner_email: str, member_name: str, org_name: str) ->
     """Notify owner that a member has left the organization."""
     html = (
         f"<p>Hi,</p>"
-        f"<p>The member <strong>{member_name}</strong> has left your organization <strong>{org_name}</strong>.</p>"
+        f"<p>The member <strong>{member_name}</strong> has left your organization "
+        f"<strong>{org_name}</strong>.</p>"
     )
     text = (
         f"Hi,\n\n"
         f"The member {member_name} has left your organization {org_name}."
     )
     try:
-        from django.core.mail import send_mail
-        from django.conf import settings
-        send_mail(
-            subject=f"Member left {org_name}",
-            message=text,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[owner_email],
-            html_message=html,
-            fail_silently=False,
-        )
+        _send_email(owner_email, f"Member left {org_name}", html, text)
         return True
     except Exception:
         return False

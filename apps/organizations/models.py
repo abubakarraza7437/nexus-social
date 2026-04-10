@@ -117,7 +117,8 @@ class OrganizationMember(models.Model):
     class Role(models.TextChoices):
         OWNER = "owner", "Owner"
         ADMIN = "admin", "Admin"
-        MEMBER = "member", "Member"
+        EDITOR = "editor", "Editor"
+        VIEWER = "viewer", "Viewer"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     organization = models.ForeignKey(
@@ -130,7 +131,7 @@ class OrganizationMember(models.Model):
         on_delete=models.CASCADE,
         related_name="organization_members",
     )
-    role = models.CharField(max_length=20, choices=Role.choices, default=Role.MEMBER)
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.VIEWER)
     is_active = models.BooleanField(default=True)
 
     # Invite tracking
@@ -257,7 +258,7 @@ class OrganizationInvitation(models.Model):
     role = models.CharField(
         max_length=20,
         choices=OrganizationMember.Role.choices,
-        default=OrganizationMember.Role.MEMBER,
+        default=OrganizationMember.Role.VIEWER,
     )
     token = models.CharField(
         max_length=64,

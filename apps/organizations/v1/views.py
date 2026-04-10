@@ -36,10 +36,6 @@ from .serializers import (
 User = get_user_model()
 
 
-# ---------------------------------------------------------------------------
-# Module-level helpers (reused across views and re-exported to v2)
-# ---------------------------------------------------------------------------
-
 def _get_org_or_404(pk) -> Organization:
     """Return the Organisation for *pk* or raise NotFound."""
     try:
@@ -59,10 +55,6 @@ def _get_membership_or_403(user, org) -> OrganizationMember:
     except OrganizationMember.DoesNotExist:
         raise PermissionDenied("You are not a member of this organization.")
 
-
-# ---------------------------------------------------------------------------
-# Organisation list / detail
-# ---------------------------------------------------------------------------
 
 class OrganizationListView(ListAPIView):
     """GET /api/v1/orgs/ — list organisations the authenticated user belongs to."""
@@ -93,10 +85,6 @@ class OrganizationDetailView(RetrieveAPIView):
         _get_membership_or_403(self.request.user, org)
         return org
 
-
-# ---------------------------------------------------------------------------
-# Invite
-# ---------------------------------------------------------------------------
 
 class InviteView(APIView):
     """POST /api/v1/orgs/{id}/invite/ — send an email invite; requester must be OWNER or ADMIN."""
@@ -140,10 +128,6 @@ class InviteView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
-
-# ---------------------------------------------------------------------------
-# Join via token
-# ---------------------------------------------------------------------------
 
 class JoinOrganizationView(APIView):
     """POST /api/v1/orgs/join/ — accept an invitation token."""
@@ -208,10 +192,6 @@ class JoinOrganizationView(APIView):
         )
 
 
-# ---------------------------------------------------------------------------
-# Member list / detail
-# ---------------------------------------------------------------------------
-
 class MemberListView(ListAPIView):
     """GET /api/v1/orgs/{id}/members/ — list active members; requester must be a member."""
 
@@ -233,11 +213,6 @@ class MemberListView(ListAPIView):
 
 
 class MemberDetailView(APIView):
-    """
-    PATCH /api/v1/orgs/{id}/members/{member_id}/ — update member role.
-    DELETE /api/v1/orgs/{id}/members/{member_id}/ — deactivate member.
-    Requester must be OWNER or ADMIN.
-    """
 
     permission_classes = [IsAuthenticated]
     serializer_class = UpdateMemberRoleSerializer
@@ -334,10 +309,6 @@ class MemberDetailView(APIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-# ---------------------------------------------------------------------------
-# Onboarding — Check or Create
-# ---------------------------------------------------------------------------
 
 class CheckOrCreateOrganizationView(APIView):
     """POST /api/v1/orgs/check-or-create/ — post-signup onboarding flow."""
@@ -520,7 +491,7 @@ class ApproveJoinRequestView(APIView):
 
         serializer = ApproveJoinRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        role = serializer.validated_data.get("role", OrganizationMember.Role.MEMBER)
+        role = serializer.validated_data.get("role", OrganizationMember.Role.VIEWER)
 
         if role in (OrganizationMember.Role.OWNER, OrganizationMember.Role.ADMIN):
             if requester.role != OrganizationMember.Role.OWNER:

@@ -1,21 +1,3 @@
-"""
-Publisher · Mock platform
-=========================
-Simulates publishing by logging to the console instead of hitting a real API.
-
-Use this in development, tests, and demos — never in production.
-
-Usage
------
-    # Always succeeds
-    publisher = MockPublisher()
-
-    # Always fails with a specific error code
-    publisher = MockPublisher(simulate_failure=ErrorCode.RATE_LIMITED)
-
-    result = publisher.publish(post_target)
-"""
-
 import logging
 import uuid
 
@@ -25,14 +7,6 @@ logger = logging.getLogger(__name__)
 
 
 class MockPublisher(BasePublisher):
-    """
-    Logs post content to the console and returns a synthetic PublishResult.
-
-    Args:
-        simulate_failure: When set to an ErrorCode string, publish() returns
-                          a failure result with that code instead of succeeding.
-                          Pass None (default) for success behaviour.
-    """
 
     platform = "mock"
 
@@ -45,10 +19,6 @@ class MockPublisher(BasePublisher):
         if self.simulate_failure:
             return self._do_failure(post_target)
         return self._do_success(post_target)
-
-    # ------------------------------------------------------------------ #
-    # Private                                                              #
-    # ------------------------------------------------------------------ #
 
     def _do_success(self, post_target) -> PublishResult:
         remote_id = f"mock_{uuid.uuid4().hex[:12]}"
@@ -88,9 +58,7 @@ class MockPublisher(BasePublisher):
         return PublishResult.failure(error_code=self.simulate_failure, message=message)
 
 
-# --------------------------------------------------------------------------- #
-# Human-readable messages for each simulated failure                          #
-# --------------------------------------------------------------------------- #
+# Human-readable messages for each simulated failure
 
 _FAILURE_MESSAGES: dict[str, str] = {
     ErrorCode.AUTH_EXPIRED:        "[Mock] OAuth token has expired. Re-authentication required.",
