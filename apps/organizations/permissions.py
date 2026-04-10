@@ -1,26 +1,7 @@
-"""
-Organizations — DRF Permission Classes
-=======================================
-Object-level permissions scoped to an Organisation instance.
-
-Usage in views::
-
-    class MyView(APIView):
-        permission_classes = [IsAuthenticated, IsOrgOwnerOrAdmin]
-
-        def get_object(self):
-            org = get_org_or_404(...)
-            self.check_object_permissions(self.request, org)
-            return org
-"""
 from rest_framework.permissions import BasePermission
 
 from .models import OrganizationMember
 
-
-# ---------------------------------------------------------------------------
-# Internal helper
-# ---------------------------------------------------------------------------
 
 def _get_org_membership(user, org):
     """
@@ -36,27 +17,13 @@ def _get_org_membership(user, org):
         return None
 
 
-# ---------------------------------------------------------------------------
-# Permission classes
-# ---------------------------------------------------------------------------
-
 class IsOrgMember(BasePermission):
-    """
-    Object-level permission: user has any active membership in the organisation.
-
-    *obj* must be an :class:`~apps.organizations.models.Organization` instance.
-    """
 
     def has_object_permission(self, request, view, obj):
         return _get_org_membership(request.user, obj) is not None
 
 
 class IsOrgOwnerOrAdmin(BasePermission):
-    """
-    Object-level permission: user is OWNER or ADMIN of the organisation.
-
-    *obj* must be an :class:`~apps.organizations.models.Organization` instance.
-    """
 
     def has_object_permission(self, request, view, obj):
         membership = _get_org_membership(request.user, obj)
@@ -67,11 +34,6 @@ class IsOrgOwnerOrAdmin(BasePermission):
 
 
 class IsOrgOwner(BasePermission):
-    """
-    Object-level permission: user is the OWNER of the organisation.
-
-    *obj* must be an :class:`~apps.organizations.models.Organization` instance.
-    """
 
     def has_object_permission(self, request, view, obj):
         membership = _get_org_membership(request.user, obj)

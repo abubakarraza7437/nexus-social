@@ -1,7 +1,3 @@
-"""
-Test Factories — factory_boy model factories.
-Used across all test modules to create realistic test fixtures.
-"""
 import factory
 import factory.fuzzy
 from django.contrib.auth import get_user_model
@@ -40,5 +36,5 @@ class OrganizationMemberFactory(factory.django.DjangoModelFactory):
 
     organization = factory.SubFactory(OrganizationFactory)
     user = factory.SubFactory(UserFactory)
-    role = OrganizationMember.Role.MEMBER
+    role = OrganizationMember.Role.VIEWER
     is_active = True

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Content API — SocialOS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3348;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; }
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrapper { display: flex; min-height: 100vh; }
+    nav.sidebar {
+      width: 260px; min-width: 260px; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 24px 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar .logo span { font-size: 12px; color: var(--muted); }
+    .sidebar-section { padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+    .sidebar a { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); transition: all 0.15s; }
+    .sidebar a:hover, .sidebar a.active { background: var(--surface2); color: var(--text); text-decoration: none; }
+
+    main { flex: 1; max-width: 900px; padding: 48px 56px; }
+    h1.page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+    .stub-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 6px; background: rgba(100,100,100,0.2); color: var(--muted); margin-left: 12px; vertical-align: middle; }
+
+    .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--text); }
+
+    .coming-soon { background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1)); border: 1px solid var(--border); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 40px; }
+    .coming-soon h2 { font-size: 24px; margin-bottom: 12px; }
+    .coming-soon p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+    .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+    .info-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--accent2); }
+    .info-box h4 { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); color: var(--muted); font-weight: 600; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a78bfa; }
+
+    .status-flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .status-item { background: var(--surface2); padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .status-arrow { color: var(--muted); }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>SocialOS API</h1>
+      <span>Content / Posts</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Navigation</div>
+      <a href="../index.html">← Back to Index</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Planned Endpoints</div>
+      <a href="#posts">Posts CRUD</a>
+      <a href="#media">Media Upload</a>
+      <a href="#approval">Approval Workflow</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="breadcrumb">
+      <a href="../index.html">API Reference</a> / Content
+    </div>
+
+    <h1 class="page-title">Content API <span class="stub-badge">Coming Soon</span></h1>
+    <p class="subtitle">Posts, media uploads, and approval workflows for multi-platform content management.</p>
+
+    <div class="coming-soon">
+      <h2>🚧 Under Development</h2>
+      <p>The Content API is currently being implemented. This documentation outlines the planned endpoints and data models.</p>
+    </div>
+
+    <div class="info-box" id="posts">
+      <h3>Planned: Posts CRUD</h3>
+      <h4>Endpoints</h4>
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><code>/api/v1/posts/</code></td><td>List posts with filtering and pagination</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/posts/</code></td><td>Create a new post</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/v1/posts/{id}/</code></td><td>Get post details</td></tr>
+          <tr><td><code>PATCH</code></td><td><code>/api/v1/posts/{id}/</code></td><td>Update post</td></tr>
+          <tr><td><code>DELETE</code></td><td><code>/api/v1/posts/{id}/</code></td><td>Delete post</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box">
+      <h3>Post Data Model</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><code>uuid</code></td><td>Unique post identifier</td></tr>
+          <tr><td><code>content</code></td><td><code>text</code></td><td>Post text content</td></tr>
+          <tr><td><code>media</code></td><td><code>array</code></td><td>Attached media files</td></tr>
+          <tr><td><code>platforms</code></td><td><code>array</code></td><td>Target platforms: <code>["facebook", "twitter", "instagram"]</code></td></tr>
+          <tr><td><code>status</code></td><td><code>string</code></td><td>Post status (see workflow below)</td></tr>
+          <tr><td><code>scheduled_at</code></td><td><code>datetime</code></td><td>Scheduled publish time (null for immediate)</td></tr>
+          <tr><td><code>published_at</code></td><td><code>datetime</code></td><td>Actual publish time</td></tr>
+          <tr><td><code>author</code></td><td><code>object</code></td><td>User who created the post</td></tr>
+          <tr><td><code>created_at</code></td><td><code>datetime</code></td><td>Creation timestamp</td></tr>
+          <tr><td><code>updated_at</code></td><td><code>datetime</code></td><td>Last update timestamp</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="approval">
+      <h3>Post Status Workflow</h3>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">Posts follow a state machine for approval and publishing.</p>
+      <div class="status-flow">
+        <span class="status-item">draft</span>
+        <span class="status-arrow">→</span>
+        <span class="status-item">pending_approval</span>
+        <span class="status-arrow">→</span>
+        <span class="status-item">approved</span>
+        <span class="status-arrow">→</span>
+        <span class="status-item">scheduled</span>
+        <span class="status-arrow">→</span>
+        <span class="status-item">publishing</span>
+        <span class="status-arrow">→</span>
+        <span class="status-item">published</span>
+      </div>
+      <div class="status-flow" style="margin-top: 12px;">
+        <span class="status-item" style="background: rgba(239,68,68,0.15); color: #ef4444;">rejected</span>
+        <span class="status-item" style="background: rgba(239,68,68,0.15); color: #ef4444;">failed</span>
+      </div>
+    </div>
+
+    <div class="info-box" id="media">
+      <h3>Planned: Media Upload</h3>
+      <h4>POST /api/v1/posts/media/</h4>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">Upload media files for attachment to posts.</p>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>file</code></td><td><code>file</code></td><td>Media file (image, video, GIF)</td></tr>
+          <tr><td><code>alt_text</code></td><td><code>string</code></td><td>Accessibility description</td></tr>
+        </tbody>
+      </table>
+      <h4 style="margin-top: 16px;">Supported Formats</h4>
+      <table>
+        <thead><tr><th>Type</th><th>Formats</th><th>Max Size</th></tr></thead>
+        <tbody>
+          <tr><td>Images</td><td>JPEG, PNG, GIF, WebP</td><td>10 MB</td></tr>
+          <tr><td>Videos</td><td>MP4, MOV</td><td>100 MB</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box">
+      <h3>Approval Endpoints</h3>
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>POST</code></td><td><code>/api/v1/posts/{id}/submit/</code></td><td>Submit for approval</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/posts/{id}/approve/</code></td><td>Approve post (admin/owner)</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/posts/{id}/reject/</code></td><td>Reject post with reason</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/posts/{id}/schedule/</code></td><td>Schedule approved post</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/posts/{id}/publish/</code></td><td>Publish immediately</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

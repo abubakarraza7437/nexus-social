@@ -1,12 +1,3 @@
-"""
-Auth Core — JWT Authentication Middleware for Django Channels
-==============================================================
-Authenticates WebSocket connections using a JWT passed as a query parameter:
-  ws://host/ws/events/?token=<access_token>
-
-Sets scope["user"] so Channels consumers can access the authenticated user
-the same way Django views use request.user.
-"""
 from typing import Any
 from urllib.parse import parse_qs
 
@@ -32,10 +23,6 @@ def _get_user_from_token(token_str: str) -> Any:
 
 
 class JWTAuthMiddleware:
-    """
-    ASGI middleware that reads ?token= from the WebSocket query string
-    and populates scope["user"].
-    """
 
     def __init__(self, app) -> None:
         self.app = app

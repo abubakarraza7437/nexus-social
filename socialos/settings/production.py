@@ -1,12 +1,3 @@
-"""
-SocialOS — Production Settings
-================================
-- DEBUG is always False.
-- RS256 JWT with private/public key pair.
-- AWS S3 + CloudFront for media.
-- Strict security headers and HTTPS enforcement.
-- Sentry error tracking enabled.
-"""
 import sentry_sdk
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -15,14 +6,9 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from .base import *  # noqa: F401, F403
 from .base import SENTRY_DSN, SENTRY_ENVIRONMENT, config
 
-# ---------------------------------------------------------------------------
 # Core — Debug MUST be False in production
-# ---------------------------------------------------------------------------
 DEBUG = False
 
-# ---------------------------------------------------------------------------
-# Security — HTTPS Enforcement
-# ---------------------------------------------------------------------------
 SECURE_SSL_REDIRECT = True
 SECURE_HSTS_SECONDS = 31_536_000        # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
@@ -35,9 +21,7 @@ SESSION_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = "Strict"
 
-# ---------------------------------------------------------------------------
 # AWS S3 + CloudFront — Media Storage
-# ---------------------------------------------------------------------------
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
@@ -72,9 +56,7 @@ MEDIA_URL = (
     else f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/"
 )
 
-# ---------------------------------------------------------------------------
 # JWT — RS256 with proper key pair
-# ---------------------------------------------------------------------------
 _jwt_private_key = config("JWT_PRIVATE_KEY").replace("\\n", "\n")
 _jwt_public_key = config("JWT_PUBLIC_KEY").replace("\\n", "\n")
 
@@ -85,14 +67,10 @@ SIMPLE_JWT = {
     "VERIFYING_KEY": _jwt_public_key,
 }
 
-# ---------------------------------------------------------------------------
 # Email — Production SMTP
-# ---------------------------------------------------------------------------
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
-# ---------------------------------------------------------------------------
 # Sentry — Error & Performance Tracking
-# ---------------------------------------------------------------------------
 if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
@@ -109,9 +87,7 @@ if SENTRY_DSN:
         release=config("APP_VERSION", default="unknown"),
     )
 
-# ---------------------------------------------------------------------------
 # Logging — structured for log aggregation (Datadog, CloudWatch, etc.)
-# ---------------------------------------------------------------------------
 LOGGING["formatters"]["verbose"]["format"] = (  # noqa: F405
     '{"time": "{asctime}", "level": "{levelname}", "logger": "{name}", '
     '"line": {lineno}, "message": "{message}"}'

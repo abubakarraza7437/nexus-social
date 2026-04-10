@@ -1,14 +1,3 @@
-"""
-Auth Core — Models
-==================
-Covers:
-  User                    — custom user model (public schema)
-  EmailVerificationToken  — single-use email verification token (public schema)
-  PasswordResetToken      — single-use password reset token (public schema)
-
-All three live in the shared (public) PostgreSQL schema and are therefore
-listed under SHARED_APPS in settings.
-"""
 import secrets
 import uuid
 from datetime import timedelta
@@ -18,9 +7,7 @@ from django.db import models
 from django.utils import timezone
 
 
-# ---------------------------------------------------------------------------
 # User
-# ---------------------------------------------------------------------------
 
 class UserManager(BaseUserManager):
     """Manager that uses email instead of username."""
@@ -58,13 +45,6 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    """
-    SocialOS platform user — lives in the public schema, shared across all tenants.
-
-    Authentication is email + password.  JWT tokens carry `org` and `role`
-    claims embedded by CustomTokenObtainSerializer so views can enforce
-    RBAC without a DB round-trip per request.
-    """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, db_index=True)
@@ -121,9 +101,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         )
 
 
-# ---------------------------------------------------------------------------
 # Token expiry callables — module-level so they are picklable for migrations.
-# ---------------------------------------------------------------------------
 
 def _email_token_expiry():
     return timezone.now() + timedelta(hours=24)
@@ -133,17 +111,9 @@ def _reset_token_expiry():
     return timezone.now() + timedelta(hours=1)
 
 
-# ---------------------------------------------------------------------------
 # EmailVerificationToken
-# ---------------------------------------------------------------------------
 
 class EmailVerificationToken(models.Model):
-    """
-    Single-use token emailed to a user to confirm address ownership.
-    Expires after 24 hours.
-
-    Lookup path: token (indexed, unique) → validate is_used + expires_at → mark used.
-    """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -163,9 +133,11 @@ class EmailVerificationToken(models.Model):
 
     class Meta:
         db_table = "email_verification_tokens"
+        verbose_name = "Email Verification Token"
+        verbose_name_plural = "Email Verification Tokens"
         indexes = [
-            models.Index(fields=["token"]),            # primary lookup on verification
-            models.Index(fields=["user", "is_used"]),  # query pending tokens per user
+            models.Index(fields=["token"], name="email_ver_token_idx"),
+            models.Index(fields=["user", "is_used"], name="email_ver_user_used_idx"),
         ]
 
     def __str__(self) -> str:
@@ -180,17 +152,9 @@ class EmailVerificationToken(models.Model):
         return not self.is_used and not self.is_expired
 
 
-# ---------------------------------------------------------------------------
 # PasswordResetToken
-# ---------------------------------------------------------------------------
 
 class PasswordResetToken(models.Model):
-    """
-    Single-use token for password reset flows.
-    Expires after 1 hour.
-
-    Lookup path: token (indexed, unique) → validate is_used + expires_at → mark used.
-    """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -209,9 +173,11 @@ class PasswordResetToken(models.Model):
 
     class Meta:
         db_table = "password_reset_tokens"
+        verbose_name = "Password Reset Token"
+        verbose_name_plural = "Password Reset Tokens"
         indexes = [
-            models.Index(fields=["token"]),
-            models.Index(fields=["user", "is_used"]),
+            models.Index(fields=["token"], name="pwd_reset_token_idx"),
+            models.Index(fields=["user", "is_used"], name="pwd_reset_user_used_idx"),
         ]
 
     def __str__(self) -> str:

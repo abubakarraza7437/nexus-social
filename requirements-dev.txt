@@ -31,3 +31,6 @@ safety>=3.0
 
 # Interactive Shell
 ipython>=8.0
+
+#flower
+flower==2.0.1

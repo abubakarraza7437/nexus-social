@@ -28,6 +28,7 @@ dependencies = [
     "django-celery-results>=2.5,<3.0",
     "celery-redbeat>=2.2,<3.0",
     "redis>=5.0,<6.0",
+    "flower==2.0.1",
     # Database
     "psycopg2-binary>=2.9,<3.0",
     "django-pgcrypto>=1.4,<2.0",
@@ -57,6 +58,7 @@ dependencies = [
     "anthropic>=0.29,<1.0",
     "django-tenants>=3.6,<4.0",
     "flake8-pyproject>=1.2.4",
+    "croniter>=3.0,<4.0",
 ]
 
 [project.optional-dependencies]
@@ -85,6 +87,9 @@ dev = [
 
     # Interactive shell
     "ipython>=8.0",
+
+    # Admin panel
+    "django-jazzmin>=3.0.4",
 ]
 
 [tool.hatch.build.targets.wheel]

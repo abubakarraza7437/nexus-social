@@ -428,7 +428,7 @@ class TestForgotPasswordView:
         payload = {"email": user.email}
 
         with patch(
-            "apps.auth_core.views.send_password_reset_email"
+            "apps.auth_core.services.send_password_reset_email"
         ) as mock_email:
             response = api_client.post(self.url, payload, format="json")
 
@@ -495,7 +495,7 @@ class TestForgotPasswordView:
 
         payload = {"email": user.email}
 
-        with patch("apps.auth_core.views.send_password_reset_email"):
+        with patch("apps.auth_core.services.send_password_reset_email"):
             response = api_client.post(self.url, payload, format="json")
 
         assert response.status_code == status.HTTP_200_OK
@@ -691,7 +691,7 @@ class TestAuthFlow:
         original_password = "TestPass123!"
 
         # 1. Request password reset
-        with patch("apps.auth_core.views.send_password_reset_email"):
+        with patch("apps.auth_core.services.send_password_reset_email"):
             forgot_response = api_client.post(
                 "/api/v1/auth/forgot-password/",
                 {"email": user.email},
@@ -762,7 +762,7 @@ class TestAuthFlow:
     ) -> None:
         """Test that multiple password reset requests invalidate previous tokens."""
         # 1. First password reset request
-        with patch("apps.auth_core.views.send_password_reset_email"):
+        with patch("apps.auth_core.services.send_password_reset_email"):
             api_client.post(
                 "/api/v1/auth/forgot-password/",
                 {"email": user.email},
@@ -772,7 +772,7 @@ class TestAuthFlow:
         first_token = PasswordResetToken.objects.get(user=user, is_used=False)
 
         # 2. Second password reset request
-        with patch("apps.auth_core.views.send_password_reset_email"):
+        with patch("apps.auth_core.services.send_password_reset_email"):
             api_client.post(
                 "/api/v1/auth/forgot-password/",
                 {"email": user.email},

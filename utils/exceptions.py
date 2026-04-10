@@ -1,20 +1,3 @@
-"""
-Utils — Custom DRF Exception Handler
-======================================
-Standardises every error response to the envelope format:
-
-    {
-        "data":   null,
-        "meta":   {},
-        "errors": [
-            {"field": "email",   "message": "Enter a valid email address."},
-            {"field": "non_field_errors", "message": "..."}
-        ]
-    }
-
-This means the frontend always knows where to look for errors and never
-has to special-case DRF's varying error shapes.
-"""
 import logging
 from typing import Any
 
@@ -29,10 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def _flatten_errors(detail: Any, field: str = "non_field_errors") -> list[dict]:
-    """
-    Recursively flatten DRF's nested error detail into a flat list of
-    ``{"field": ..., "message": ...}`` dicts.
-    """
+
     errors: list[dict] = []
 
     if isinstance(detail, list):
@@ -48,10 +28,7 @@ def _flatten_errors(detail: Any, field: str = "non_field_errors") -> list[dict]:
 
 
 def custom_exception_handler(exc: Exception, context: dict) -> Response | None:
-    """
-    Drop-in replacement for DRF's default exception handler.
-    Registered in settings.REST_FRAMEWORK["EXCEPTION_HANDLER"].
-    """
+
     # Let DRF convert Django's Http404 / PermissionDenied first.
     response = drf_exception_handler(exc, context)
 
@@ -60,9 +37,7 @@ def custom_exception_handler(exc: Exception, context: dict) -> Response | None:
         logger.exception("Unhandled exception in view", exc_info=exc)
         return None
 
-    # ------------------------------------------------------------------ #
-    # Normalise to envelope format                                         #
-    # ------------------------------------------------------------------ #
+    # Normalise to envelope format
     if isinstance(exc, ValidationError):
         errors = _flatten_errors(exc.detail)
         http_status = status.HTTP_422_UNPROCESSABLE_ENTITY
