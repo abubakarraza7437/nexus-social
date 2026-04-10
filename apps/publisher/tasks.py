@@ -11,22 +11,27 @@ from apps.publisher.schemas import PublishSuccessPayload
 logger = get_task_logger(__name__)
 
 
+class RetryablePublishError(Exception):
+    """Raised on a recoverable publish failure to trigger Celery's retry mechanism."""
+
+
 @shared_task(
     bind=True,
     queue='publish',
     max_retries=5,
     acks_late=True,
     reject_on_worker_lost=True,
+    autoretry_for=(RetryablePublishError,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=False,
 )
 def publish_post(self, post_target_id: str, schema_name: str):
-    """
-    Publish a single PostTarget to its platform.
 
-    Task ID: publish-{post_target_id} (deterministic for idempotency)
-    Status flow: Scheduled → Publishing → Published/Failed
-    """
     with schema_context(schema_name):
         task_id = f"publish-{post_target_id}"
+        attempt = self.request.retries + 1          # 1-indexed current attempt
+        is_final = self.request.retries >= self.max_retries
 
         # 1. Fetch PostTarget
         try:
@@ -43,14 +48,18 @@ def publish_post(self, post_target_id: str, schema_name: str):
             )
             return
 
-        # 3. Acquire lock via PublishJob (DB-level constraint enforces one active job)
+        # 3. Acquire lock via PublishJob (DB-level constraint enforces one active job).
+        # Append retry count so each attempt gets a unique celery_task_id.
+        unique_task_id = f"{self.request.id or task_id}-{self.request.retries}"
         try:
             with transaction.atomic():
                 job = PublishJob.objects.create(
                     org_id=post_target.post.organization_id,
                     target=post_target,
                     task_name="apps.publisher.tasks.publish_post",
-                    celery_task_id=self.request.id or task_id,
+                    celery_task_id=unique_task_id,
+                    attempt_number=attempt,
+                    max_attempts=self.max_retries + 1,
                 )
         except IntegrityError:
             logger.warning(
@@ -84,13 +93,16 @@ def publish_post(self, post_target_id: str, schema_name: str):
             job.mark_failed(
                 code=result.error_code,
                 message=result.message,
-                schedule_retry=job.can_retry,
+                schedule_retry=not is_final,
             )
             logger.warning(
                 "Publish failed",
                 extra={
                     "post_target_id": post_target_id,
                     "error_code": result.error_code,
-                    "attempt": job.attempt_number,
+                    "attempt": attempt,
+                    "is_final": is_final,
                 },
             )
+            if not is_final:
+                raise RetryablePublishError(result.message)
