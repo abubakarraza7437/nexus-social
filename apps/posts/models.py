@@ -1,18 +1,3 @@
-"""
-Posts · Models
-==============
-Handles the creation, scheduling, and lifecycle of social media posts.
-These models reside in the tenant schema.
-
-Key design decisions
---------------------
-* Post is a scheduling unit only — all content lives in the content app.
-* A Post links to a Content object (FK); content is shared across posts.
-* Multi-platform delivery is handled by PostTarget, one row per platform.
-* Per-platform content overrides are stored on PostTarget (optional).
-* Post.status reflects the aggregate state; each PostTarget carries its own.
-"""
-
 import uuid
 from django.db import models
 from django.conf import settings
@@ -26,12 +11,6 @@ from apps.posts.schemas import PostTargetErrorPayload
 
 
 class Post(models.Model):
-    """
-    A scheduling wrapper around a piece of Content.
-
-    One Post → one Content (shared).
-    One Post → many PostTargets (one per platform/account).
-    """
 
     class Status(models.TextChoices):
         TEMPLATE = "template", "Template"
@@ -68,9 +47,6 @@ class Post(models.Model):
     #     help_text="Shared content block (text + media). One content can back many posts.",
     # )
 
-    # ------------------------------------------------------------------ #
-    # Scheduling                                                          #
-    # ------------------------------------------------------------------ #
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -84,9 +60,6 @@ class Post(models.Model):
         help_text="Set when ALL targets have published successfully.",
     )
 
-    # ------------------------------------------------------------------ #
-    # Metadata                                                            #
-    # ------------------------------------------------------------------ #
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -103,22 +76,8 @@ class Post(models.Model):
     def __str__(self) -> str:
         return f"Post {self.id} [{self.status}]"
 
-    # ------------------------------------------------------------------ #
-    # Helpers                                                             #
-    # ------------------------------------------------------------------ #
     def sync_status(self) -> None:
-        """
-        Recompute and save Post.status from its PostTargets.
 
-        Call this after any PostTarget status change.
-
-        Rules (in priority order):
-          1. Any target still publishing  → PUBLISHING
-          2. All targets published        → PUBLISHED  (sets published_at)
-          3. Any target failed            → FAILED
-          4. Any target scheduled         → SCHEDULED
-          5. Fallback                     → DRAFT
-        """
         targets = list(self.targets.values_list("status", flat=True))
         if not targets:
             return
@@ -141,12 +100,6 @@ class Post(models.Model):
 
 
 class PostTarget(models.Model):
-    """
-    One delivery slot: a Post going out on a specific platform/account.
-
-    Status and error tracking live here so each platform can succeed or
-    fail independently.
-    """
 
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
@@ -200,9 +153,6 @@ class PostTarget(models.Model):
     #     help_text="Platform-specific content. If blank, post.content is used.",
     # )
 
-    # ------------------------------------------------------------------ #
-    # Delivery state                                                      #
-    # ------------------------------------------------------------------ #
     status = models.CharField(
         max_length=20,
         choices=Status.choices,

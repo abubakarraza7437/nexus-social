@@ -1,7 +1,3 @@
-"""
-Organizations v2 — URL patterns.
-Mounted at /api/v2/orgs/ via api/v2/urls.py.
-"""
 from django.urls import path
 
 from .views import (

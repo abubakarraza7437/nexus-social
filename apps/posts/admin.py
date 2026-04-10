@@ -1,8 +1,3 @@
-"""
-Publisher — Admin Configuration
-===============================
-Registers Post and PostTarget models for the Django admin interface.
-"""
 from django.contrib import admin
 from apps.posts.models import Post, PostTarget
 

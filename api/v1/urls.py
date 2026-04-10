@@ -1,11 +1,3 @@
-"""
-API v1 — Central Router
-========================
-Pure routing — no views or serializers live here.
-Each app owns its own v1/ subpackage with views, serializers, and urls.
-
-Mounted at /api/v1/ in socialos/urls.py.
-"""
 from django.urls import include, path
 
 urlpatterns = [

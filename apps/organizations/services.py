@@ -1,9 +1,3 @@
-"""
-Organizations — Services
-========================
-Business-logic functions that operate on Organisation-related models,
-keeping views thin and logic testable.
-"""
 import logging
 import re
 from typing import Optional
@@ -24,32 +18,13 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Invitation Services
-# ---------------------------------------------------------------------------
-
 def create_invitation(
     org,
     invited_by,
     email: str,
     role: str,
 ) -> OrganizationInvitation:
-    """
-    Create (or re-create) an invitation for *email* to join *org* as *role*.
 
-    Any existing **pending** (is_used=False) invitations for the same
-    email + org pair are invalidated first so only one active token exists
-    at a time.
-
-    Args:
-        org:        Organization instance.
-        invited_by: User instance issuing the invitation.
-        email:      Email address of the invitee.
-        role:       OrganizationMember.Role value string.
-
-    Returns:
-        The newly created :class:`~apps.organizations.models.OrganizationInvitation`.
-    """
     # Invalidate any prior pending invitations for this email+org.
     OrganizationInvitation.objects.filter(
         organization=org,
@@ -66,20 +41,8 @@ def create_invitation(
     return invitation
 
 
-# ---------------------------------------------------------------------------
-# Organization Onboarding Services
-# ---------------------------------------------------------------------------
-
 def check_organization_exists(name: str) -> Optional[Organization]:
-    """
-    Check if an organization with the given name exists (case-insensitive).
 
-    Args:
-        name: Organization name to check.
-
-    Returns:
-        Organization instance if found, None otherwise.
-    """
     return Organization.objects.filter(
         name__iexact=name.strip(),
         is_active=True,
@@ -87,17 +50,7 @@ def check_organization_exists(name: str) -> Optional[Organization]:
 
 
 def generate_unique_slug(name: str) -> str:
-    """
-    Generate a unique slug from the organization name.
 
-    Handles collisions by appending a numeric suffix.
-
-    Args:
-        name: Organization name.
-
-    Returns:
-        Unique slug string.
-    """
     base_slug = slugify(name)[:90]  # Leave room for suffix
 
     # Ensure slug is not empty
@@ -154,25 +107,7 @@ def create_organization_with_owner(
     owner_user,
     plan: str = Organization.Plan.FREE,
 ) -> tuple[Organization, OrganizationMember]:
-    """
-    Create a new Organization with the given user as OWNER.
 
-    This function:
-    1. Creates the Organization (TenantMixin auto-creates the schema)
-    2. Creates the Domain entry (required by django-tenants)
-    3. Creates the OrganizationMember with role=OWNER
-
-    Args:
-        name: Organization name.
-        owner_user: User instance to become the owner.
-        plan: Initial plan (defaults to FREE).
-
-    Returns:
-        Tuple of (Organization, OrganizationMember).
-
-    Raises:
-        ValueError: If organization name already exists.
-    """
     # Double-check uniqueness (case-insensitive)
     if check_organization_exists(name):
         raise ValueError(f"Organization with name '{name}' already exists.")
@@ -226,20 +161,7 @@ def create_join_request(
     organization: Organization,
     message: str = "",
 ) -> JoinRequest:
-    """
-    Create a join request for a user to join an organization.
 
-    Args:
-        user: User requesting to join.
-        organization: Target organization.
-        message: Optional message from the user.
-
-    Returns:
-        The created JoinRequest instance.
-
-    Raises:
-        ValueError: If user is already a member or has a pending request.
-    """
     # Check if already a member
     if OrganizationMember.objects.filter(
         organization=organization,
@@ -277,15 +199,7 @@ def create_join_request(
 
 
 def get_organization_admins(organization: Organization):
-    """
-    Get all OWNER and ADMIN members of an organization.
 
-    Args:
-        organization: Target organization.
-
-    Returns:
-        QuerySet of OrganizationMember instances with OWNER or ADMIN role.
-    """
     return OrganizationMember.objects.filter(
         organization=organization,
         role__in=[OrganizationMember.Role.OWNER, OrganizationMember.Role.ADMIN],
@@ -299,20 +213,7 @@ def approve_join_request(
     reviewer,
     role: str = OrganizationMember.Role.MEMBER,
 ) -> OrganizationMember:
-    """
-    Approve a join request and create the membership.
 
-    Args:
-        join_request: The JoinRequest to approve.
-        reviewer: User approving the request (must be OWNER/ADMIN).
-        role: Role to assign (defaults to MEMBER for least privilege).
-
-    Returns:
-        The created OrganizationMember instance.
-
-    Raises:
-        ValueError: If request is not pending or already processed.
-    """
     # Re-fetch with a row lock so concurrent approvals don't both pass the
     # status check and create a duplicate OrganizationMember.
     join_request = JoinRequest.objects.select_for_update().get(pk=join_request.pk)
@@ -356,20 +257,7 @@ def reject_join_request(
     reviewer,
     reason: str = "",
 ) -> JoinRequest:
-    """
-    Reject a join request.
 
-    Args:
-        join_request: The JoinRequest to reject.
-        reviewer: User rejecting the request (must be OWNER/ADMIN).
-        reason: Optional reason for rejection.
-
-    Returns:
-        The updated JoinRequest instance.
-
-    Raises:
-        ValueError: If request is not pending.
-    """
     if join_request.status != JoinRequest.Status.PENDING:
         raise ValueError(f"Join request is not pending (status={join_request.status}).")
 
@@ -392,17 +280,8 @@ def reject_join_request(
     return join_request
 
 
-# ---------------------------------------------------------------------------
-# Notification Services (Mock)
-# ---------------------------------------------------------------------------
-
 def notify_admins_of_join_request(join_request: JoinRequest) -> None:
-    """
-    Email every OWNER/ADMIN in the organization about a new join request.
 
-    Args:
-        join_request: The new JoinRequest instance.
-    """
     from apps.auth_core.services import _send_email
 
     admins = get_organization_admins(join_request.organization)
@@ -447,13 +326,7 @@ def notify_user_of_request_decision(
     join_request: JoinRequest,
     approved: bool,
 ) -> None:
-    """
-    Email the requesting user about the outcome of their join request.
 
-    Args:
-        join_request: The processed JoinRequest instance.
-        approved: Whether the request was approved.
-    """
     from apps.auth_core.services import _send_email
 
     org_name = join_request.organization.name

@@ -1,10 +1,3 @@
-"""
-Publisher · Models
-==================
-Tracks async publish jobs associated with PostTargets.
-One job per PostTarget per attempt cycle.
-"""
-
 import uuid
 import datetime
 from django.db import models
@@ -15,18 +8,6 @@ from apps.publisher.schemas import PublishErrorPayload, PublishSuccessPayload
 
 
 class PublishJob(models.Model):
-    """
-    Tracks a single Celery task dispatched to publish one PostTarget.
-
-    Lifecycle
-    ---------
-    PENDING → RUNNING → SUCCESS
-                      ↘ FAILED → (retry) → PENDING ...
-
-    One active job (PENDING or RUNNING) is enforced per PostTarget via a
-    partial UniqueConstraint. Completed jobs (SUCCESS / FAILED) are kept
-    for the audit log; only the active row is constrained.
-    """
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -143,13 +124,7 @@ class PublishJob(models.Model):
         traceback: str = "",
         schedule_retry: bool = True,
     ) -> None:
-        """
-        Record a failure with structured error info.
 
-        If attempts remain and schedule_retry=True, computes exponential
-        backoff and sets retry_at for the scheduler to re-enqueue.
-        Otherwise propagates the failure to PostTarget.
-        """
         self.status = self.Status.FAILED
         self.error = PublishErrorPayload(
             code=code,

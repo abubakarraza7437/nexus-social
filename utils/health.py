@@ -1,11 +1,3 @@
-"""
-Utils — Health & Readiness Check Views
-=========================================
-Used by Kubernetes liveness and readiness probes.
-
-GET /health/   → liveness  — returns 200 if the process is alive (no DB check)
-GET /ready/    → readiness — returns 200 only when DB, Redis, and Celery
-"""
 import logging
 
 from django.db import connection
@@ -16,21 +8,12 @@ logger = logging.getLogger(__name__)
 
 
 class HealthView(View):
-    """
-    Liveness probe — confirms the Python process is alive and Django is loaded.
-    Intentionally does NOT check external services so a DB outage doesn't
-    trigger a pod restart loop.
-    """
 
     def get(self, request, *args, **kwargs) -> JsonResponse:
         return JsonResponse({"status": "ok"}, status=200)
 
 
 class ReadinessView(View):
-    """
-    Readiness probe — confirms all critical dependencies are reachable.
-    Kubernetes stops sending traffic to the pod if this returns non-200.
-    """
 
     def get(self, request, *args, **kwargs) -> JsonResponse:
         checks = {

@@ -1,11 +1,3 @@
-"""
-Organizations v1 — Views
-=========================
-Moved here from apps/organizations/views.py (the root file is now a
-backward-compat shim that re-exports everything from this module).
-
-No logic changes from the original — this is the canonical v1 contract.
-"""
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError

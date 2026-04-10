@@ -1,21 +1,3 @@
-"""
-Publisher · Base interface
-==========================
-All platform publishers must subclass BasePublisher and implement publish().
-
-Usage (in Celery task)
-----------------------
-    from apps.publisher.platforms.facebook import FacebookPublisher
-
-    publisher = FacebookPublisher(account=social_account)
-    result = publisher.publish(post_target)
-
-    if result.ok:
-        job.mark_success({"remote_post_id": result.remote_id})
-    else:
-        job.mark_failed(code=result.error_code, message=result.message)
-"""
-
 from __future__ import annotations
 
 import logging
@@ -26,18 +8,7 @@ from apps.publisher.schemas import PublishResult  # noqa: F401 — re-exported f
 logger = logging.getLogger(__name__)
 
 
-# --------------------------------------------------------------------------- #
-# Standard error codes                                                         #
-# --------------------------------------------------------------------------- #
-
 class ErrorCode:
-    """
-    Shared error codes across all platform publishers.
-
-    Keep codes uppercase and dot-namespaced so they sort cleanly in logs.
-    Platform-specific codes should be prefixed with the platform name,
-    e.g. "TWITTER.DUPLICATE_CONTENT".
-    """
 
     # Auth
     AUTH_EXPIRED = "AUTH.EXPIRED"  # OAuth token expired
@@ -59,24 +30,7 @@ class ErrorCode:
     UNKNOWN = "UNKNOWN"
 
 
-# --------------------------------------------------------------------------- #
-# Abstract base                                                                #
-# --------------------------------------------------------------------------- #
-
 class BasePublisher(ABC):
-    """
-    Contract every platform publisher must satisfy.
-
-    Subclasses
-    ----------
-    Implement publish() only. Do not override __init__ signature without
-    calling super().__init__().
-
-    Thread safety
-    -------------
-    Publisher instances are created per-task invocation inside Celery workers.
-    Do not share state across calls.
-    """
 
     #: Human-readable platform name — must be set on every concrete subclass.
     platform: str = ""
@@ -109,10 +63,6 @@ class BasePublisher(ABC):
         Returns:
             PublishResult with ok=True on success, ok=False on any failure.
         """
-
-    # ------------------------------------------------------------------ #
-    # Helpers available to all subclasses                                 #
-    # ------------------------------------------------------------------ #
 
     def _log_attempt(self, post_target_id: str) -> None:
         logger.info(
