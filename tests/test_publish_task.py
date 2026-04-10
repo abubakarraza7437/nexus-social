@@ -314,3 +314,116 @@ class TestPublishTaskGuards:
             publish_post._orig_run.__func__(_mock_self(), str(target.pk), "public")  # must not raise
 
         mock_pub_cls.return_value.publish.assert_not_called()
+
+
+# --------------------------------------------------------------------------- #
+# on_failure handler                                                           #
+# --------------------------------------------------------------------------- #
+
+def _call_on_failure(exc, post_target_id=None, schema_name="public", job=None):
+    """
+    Invoke publish_post.on_failure with all DB calls mocked.
+
+    Returns the job mock so callers can assert on mark_failed calls.
+    """
+    if post_target_id is None:
+        post_target_id = str(uuid.uuid4())
+
+    job_cls_mock = MagicMock()
+    if job is not None:
+        job_cls_mock.objects.filter.return_value.first.return_value = job
+    else:
+        job_cls_mock.objects.filter.return_value.first.return_value = None
+
+    with ExitStack() as stack:
+        stack.enter_context(patch("apps.publisher.tasks.schema_context", side_effect=_noop))
+        stack.enter_context(patch("apps.publisher.tasks.PublishJob", job_cls_mock))
+        publish_post.on_failure(
+            exc=exc,
+            task_id="task-xyz",
+            args=[post_target_id, schema_name],
+            kwargs={},
+            einfo=None,
+        )
+
+    return job_cls_mock
+
+
+class TestOnFailureHandler:
+
+    def test_marks_running_job_failed(self):
+        job = MagicMock()
+        _call_on_failure(RuntimeError("boom"), job=job)
+        job.mark_failed.assert_called_once()
+
+    def test_mark_failed_called_with_schedule_retry_false(self):
+        job = MagicMock()
+        _call_on_failure(RuntimeError("boom"), job=job)
+        _, kwargs = job.mark_failed.call_args
+        assert kwargs["schedule_retry"] is False
+
+    def test_failure_message_stored(self):
+        job = MagicMock()
+        _call_on_failure(RuntimeError("disk full"), job=job)
+        _, kwargs = job.mark_failed.call_args
+        assert "disk full" in kwargs["message"]
+
+    def test_error_code_is_unknown(self):
+        job = MagicMock()
+        _call_on_failure(ValueError("unexpected"), job=job)
+        _, kwargs = job.mark_failed.call_args
+        assert kwargs["code"] == ErrorCode.UNKNOWN
+
+    def test_no_running_job_is_a_noop(self):
+        """If the job was never created (crash before step 3), handler must not raise."""
+        job_cls_mock = _call_on_failure(RuntimeError("early crash"), job=None)
+        # filter().first() returned None — no mark_failed call on anything
+        assert job_cls_mock.objects.filter.return_value.first.return_value is None
+
+    def test_short_args_is_a_noop(self):
+        """Missing args (edge case) must not raise."""
+        with patch("apps.publisher.tasks.schema_context", side_effect=_noop):
+            publish_post.on_failure(
+                exc=RuntimeError("boom"),
+                task_id="t",
+                args=[],       # no post_target_id / schema_name
+                kwargs={},
+                einfo=None,
+            )
+
+    def test_filters_only_running_jobs(self):
+        """Handler must only consider RUNNING jobs, not failed/success ones."""
+        job_cls_mock = MagicMock()
+        job_cls_mock.Status = PublishJob.Status   # preserve real enum so assertion matches
+        job_cls_mock.objects.filter.return_value.first.return_value = None
+        target_id = str(uuid.uuid4())
+
+        with ExitStack() as stack:
+            stack.enter_context(patch("apps.publisher.tasks.schema_context", side_effect=_noop))
+            stack.enter_context(patch("apps.publisher.tasks.PublishJob", job_cls_mock))
+            publish_post.on_failure(
+                exc=RuntimeError("x"),
+                task_id="t",
+                args=[target_id, "public"],
+                kwargs={},
+                einfo=None,
+            )
+
+        job_cls_mock.objects.filter.assert_called_once_with(
+            target_id=target_id,
+            status=PublishJob.Status.RUNNING,
+        )
+
+    def test_db_error_in_handler_does_not_propagate(self):
+        """If the DB call inside on_failure itself raises, it must be swallowed."""
+        with ExitStack() as stack:
+            stack.enter_context(
+                patch("apps.publisher.tasks.schema_context", side_effect=Exception("db down"))
+            )
+            publish_post.on_failure(
+                exc=RuntimeError("original error"),
+                task_id="t",
+                args=[str(uuid.uuid4()), "public"],
+                kwargs={},
+                einfo=None,
+            )  # must not raise
