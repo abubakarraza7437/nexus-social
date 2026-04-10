@@ -1,19 +1,20 @@
 """
 Tests for multi-tenant / organization isolation.
 
-Covers three properties:
+Covers two properties:
   1. Cross-org access is blocked  — User A cannot read/write User B's org data
   2. Query filtering              — DB queries are scoped to the requesting user's orgs
-  3. Middleware tenant attachment — TenantIsolationMiddleware sets app.current_org_id
+
+Schema-level isolation is enforced by django-tenants (TenantMainMiddleware +
+per-tenant PostgreSQL schema). The old RLS-based TenantIsolationMiddleware has
+been removed; these tests verify application-layer access control only.
 """
-from unittest.mock import MagicMock, patch
 
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.organizations.middleware import TenantIsolationMiddleware
 from apps.organizations.models import Organization, OrganizationMember
 from tests.factories import OrganizationFactory, OrganizationMemberFactory, UserFactory
 
@@ -117,7 +118,7 @@ class TestCrossOrgAccess:
             org_b: Organization,
     ) -> None:
         """POST /api/v1/orgs/{org_b.id}/invite/ returns 403 for User A."""
-        payload = {"email": "outsider@example.com", "role": "member"}
+        payload = {"email": "outsider@example.com", "role": "viewer"}
         response = _client_for(user_a).post(
             f"/api/v1/orgs/{org_b.id}/invite/", payload, format="json"
         )
@@ -209,9 +210,8 @@ class TestQueryFiltering:
             org_a: Organization,
     ) -> None:
         """Member list for Org A contains only Org A members, not Org B members."""
-        # Add a second member to Org A so we can verify the count precisely
         extra_member = OrganizationMemberFactory(
-            organization=org_a, role=OrganizationMember.Role.MEMBER
+            organization=org_a, role=OrganizationMember.Role.VIEWER
         )
 
         response = _client_for(user_a).get(f"/api/v1/orgs/{org_a.id}/members/")
@@ -221,10 +221,8 @@ class TestQueryFiltering:
         results = data.get("results") or data.get("data") or data
         member_ids = {str(r["id"]) for r in results}
 
-        # Org A has user_a (owner) + extra_member
         assert str(membership_a.id) in member_ids
         assert str(extra_member.id) in member_ids
-        # Org B's owner membership must NOT appear
         assert str(membership_b.id) not in member_ids
 
     def test_member_list_excludes_inactive_members(
@@ -279,100 +277,3 @@ class TestQueryFiltering:
 
         assert str(org_b.id) in ids_b
         assert str(org_a.id) not in ids_b
-
-
-# ---------------------------------------------------------------------------
-# 3. Middleware — TenantIsolationMiddleware attaches tenant to the connection
-# ---------------------------------------------------------------------------
-
-
-class TestTenantIsolationMiddleware:
-    """TenantIsolationMiddleware must set app.current_org_id when request.org is present."""
-
-    def _make_middleware(self):
-        get_response = MagicMock(return_value=MagicMock())
-        return TenantIsolationMiddleware(get_response)
-
-    def _make_request(self, org=None):
-        request = MagicMock()
-        if org is not None:
-            request.org = org
-        else:
-            # simulate no `org` attribute (unauthenticated / no membership)
-            del request.org
-        return request
-
-    def test_sets_current_org_id_when_org_present(self, org_a: Organization) -> None:
-        """process_view executes SET LOCAL with the org's UUID."""
-        middleware = self._make_middleware()
-        request = self._make_request(org=org_a)
-
-        with patch("apps.organizations.middleware.connection") as mock_conn:
-            mock_cursor = MagicMock()
-            mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cursor)
-            mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
-
-            result = middleware.process_view(request, MagicMock(), [], {})
-
-        assert result is None  # must not short-circuit the view
-        mock_cursor.execute.assert_called_once_with(
-            "SET LOCAL app.current_org_id = %s",
-            [str(org_a.id)],
-        )
-
-    def test_noop_when_no_org_on_request(self) -> None:
-        """process_view is a no-op for unauthenticated / org-less requests."""
-        middleware = self._make_middleware()
-        request = self._make_request(org=None)
-
-        with patch("apps.organizations.middleware.connection") as mock_conn:
-            result = middleware.process_view(request, MagicMock(), [], {})
-
-        assert result is None
-        mock_conn.cursor.assert_not_called()
-
-    def test_does_not_short_circuit_when_org_present(self, org_a: Organization) -> None:
-        """process_view must return None (let Django continue to the view)."""
-        middleware = self._make_middleware()
-        request = self._make_request(org=org_a)
-
-        with patch("apps.organizations.middleware.connection"):
-            result = middleware.process_view(request, MagicMock(), [], {})
-
-        assert result is None
-
-    def test_gracefully_handles_db_error(self, org_a: Organization) -> None:
-        """A cursor error must be swallowed so the request is not broken."""
-        middleware = self._make_middleware()
-        request = self._make_request(org=org_a)
-
-        with patch("apps.organizations.middleware.connection") as mock_conn:
-            mock_conn.cursor.side_effect = Exception("DB unavailable")
-
-            # Should not raise
-            result = middleware.process_view(request, MagicMock(), [], {})
-
-        assert result is None
-
-    def test_different_orgs_produce_different_ids(
-            self, org_a: Organization, org_b: Organization
-    ) -> None:
-        """Each org gets its own UUID written to the session variable."""
-        middleware = self._make_middleware()
-        executed = []
-
-        def capture_execute(sql, params):
-            executed.append(params[0])
-
-        for org in (org_a, org_b):
-            request = self._make_request(org=org)
-            with patch("apps.organizations.middleware.connection") as mock_conn:
-                mock_cursor = MagicMock()
-                mock_cursor.execute.side_effect = capture_execute
-                mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cursor)
-                mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
-                middleware.process_view(request, MagicMock(), [], {})
-
-        assert executed[0] == str(org_a.id)
-        assert executed[1] == str(org_b.id)
-        assert executed[0] != executed[1]

@@ -55,7 +55,7 @@ class InviteSerializer(serializers.Serializer):
     email = serializers.EmailField()
     role = serializers.ChoiceField(
         choices=OrganizationMember.Role.choices,
-        default=OrganizationMember.Role.MEMBER,
+        default=OrganizationMember.Role.VIEWER,
     )
 
 
@@ -202,8 +202,8 @@ class ApproveJoinRequestSerializer(serializers.Serializer):
 
     role = serializers.ChoiceField(
         choices=OrganizationMember.Role.choices,
-        default=OrganizationMember.Role.MEMBER,
-        help_text="Role to assign to the new member (defaults to MEMBER).",
+        default=OrganizationMember.Role.VIEWER,
+        help_text="Role to assign to the new member (defaults to VIEWER).",
     )
 
 

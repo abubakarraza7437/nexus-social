@@ -1,9 +1,3 @@
-"""
-Auth Core — Services
-====================
-Business-logic functions for user registration, organisation bootstrapping,
-and transactional email dispatch via Gmail SMTP.
-"""
 import logging
 import re
 import uuid
@@ -246,16 +240,7 @@ def send_org_deleted_email(user, org_name: str) -> bool:
         f"You are no longer a member of this organization."
     )
     try:
-        from django.core.mail import send_mail
-        from django.conf import settings
-        send_mail(
-            subject=f"Organization {org_name} deleted",
-            message=text,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            html_message=html,
-            fail_silently=False,
-        )
+        _send_email(user.email, f"Organization {org_name} deleted", html, text)
         return True
     except Exception:
         return False
@@ -265,23 +250,15 @@ def send_member_left_email(owner_email: str, member_name: str, org_name: str) ->
     """Notify owner that a member has left the organization."""
     html = (
         f"<p>Hi,</p>"
-        f"<p>The member <strong>{member_name}</strong> has left your organization <strong>{org_name}</strong>.</p>"
+        f"<p>The member <strong>{member_name}</strong> has left your organization "
+        f"<strong>{org_name}</strong>.</p>"
     )
     text = (
         f"Hi,\n\n"
         f"The member {member_name} has left your organization {org_name}."
     )
     try:
-        from django.core.mail import send_mail
-        from django.conf import settings
-        send_mail(
-            subject=f"Member left {org_name}",
-            message=text,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[owner_email],
-            html_message=html,
-            fail_silently=False,
-        )
+        _send_email(owner_email, f"Member left {org_name}", html, text)
         return True
     except Exception:
         return False

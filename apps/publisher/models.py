@@ -18,7 +18,7 @@ class PublishJob(models.Model):
         Organization,
         on_delete=models.CASCADE,
         related_name="publish_jobs",
-        help_text="Organization this job belongs to (for RLS).",
+        help_text="Organization this job belongs to (tenant ownership).",
     )
     target = models.ForeignKey(
         PostTarget,

@@ -211,7 +211,7 @@ def get_organization_admins(organization: Organization):
 def approve_join_request(
     join_request: JoinRequest,
     reviewer,
-    role: str = OrganizationMember.Role.MEMBER,
+    role: str = OrganizationMember.Role.VIEWER,
 ) -> OrganizationMember:
 
     # Re-fetch with a row lock so concurrent approvals don't both pass the

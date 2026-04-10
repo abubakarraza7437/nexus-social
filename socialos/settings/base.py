@@ -100,9 +100,9 @@ PUBLIC_SCHEMA_URLCONF = "socialos.urls"
 # ---------------------------------------------------------------------------
 # Middleware
 # Order matters:
-#   1. Security / WhiteNoise / CORS must be first.
-#   2. Axes must come after AuthenticationMiddleware.
-#   3. TenantIsolationMiddleware runs last (after request.user is populated).
+#   1. TenantMainMiddleware must be first — activates the tenant schema.
+#   2. Security / WhiteNoise / CORS follow immediately after.
+#   3. Axes must come after AuthenticationMiddleware.
 # ---------------------------------------------------------------------------
 MIDDLEWARE = [
     # django-tenants: must be first — sets the DB schema for every request.
@@ -236,7 +236,7 @@ CHANNEL_LAYERS = {
 # Django REST Framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "apps.auth_core.authentication.JWTAuthenticationWithContext",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
