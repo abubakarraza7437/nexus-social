@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Organizations v2 API — SocialOS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3348;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+      --get: #10b981;
+      --post: #3b82f6;
+      --patch: #f59e0b;
+      --delete: #ef4444;
+      --put: #8b5cf6;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; }
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrapper { display: flex; min-height: 100vh; }
+    nav.sidebar {
+      width: 300px; min-width: 300px; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 24px 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar .logo span { font-size: 12px; color: var(--muted); }
+    .sidebar-section { padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+    .sidebar a { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 12px; color: var(--muted); transition: all 0.15s; }
+    .sidebar a:hover, .sidebar a.active { background: var(--surface2); color: var(--text); text-decoration: none; }
+    .sidebar .method-badge { font-size: 8px; font-weight: 700; padding: 2px 5px; border-radius: 4px; margin-right: 4px; flex-shrink: 0; }
+    .sidebar .method-get { background: rgba(16,185,129,0.15); color: var(--get); }
+    .sidebar .method-post { background: rgba(59,130,246,0.15); color: var(--post); }
+    .sidebar .method-patch { background: rgba(245,158,11,0.15); color: var(--patch); }
+    .sidebar .method-delete { background: rgba(239,68,68,0.15); color: var(--delete); }
+    .sidebar .new-badge { font-size: 8px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(16,185,129,0.2); color: var(--get); margin-left: auto; }
+    .sidebar .changed-badge { font-size: 8px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(245,158,11,0.2); color: var(--patch); margin-left: auto; }
+
+    main { flex: 1; max-width: 1000px; padding: 48px 56px; }
+    h1.page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+    .version-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 6px; background: rgba(16,185,129,0.2); color: var(--get); margin-left: 12px; vertical-align: middle; }
+
+    .changelog-box { background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(99,102,241,0.1)); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 40px; }
+    .changelog-box h3 { font-size: 14px; font-weight: 700; color: var(--get); margin-bottom: 12px; }
+    .changelog-box ul { font-size: 13px; color: var(--text); padding-left: 20px; line-height: 1.8; }
+    .changelog-box code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+
+    .endpoint-section { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+    .endpoint-section:last-child { border-bottom: none; }
+    .endpoint-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .endpoint-title { font-size: 20px; font-weight: 700; }
+    .method { display: inline-block; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; }
+    .method-get { background: rgba(16,185,129,0.15); color: var(--get); }
+    .method-post { background: rgba(59,130,246,0.15); color: var(--post); }
+    .method-patch { background: rgba(245,158,11,0.15); color: var(--patch); }
+    .method-delete { background: rgba(239,68,68,0.15); color: var(--delete); }
+    .endpoint-path { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; color: var(--accent2); background: var(--surface2); padding: 4px 10px; border-radius: 6px; }
+
+    .endpoint-desc { color: var(--muted); font-size: 14px; margin-bottom: 20px; line-height: 1.7; }
+
+    .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+    .info-box h4 { font-size: 13px; font-weight: 700; color: var(--accent2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .info-box.highlight { border-color: var(--get); background: rgba(16,185,129,0.05); }
+    .info-box.highlight h4 { color: var(--get); }
+    .info-box.new-endpoint { border-color: var(--get); border-width: 2px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); color: var(--muted); font-weight: 600; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; color: #a78bfa; }
+    .required { color: var(--delete); font-size: 10px; font-weight: 600; }
+    .optional { color: var(--muted); font-size: 10px; }
+
+    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.6; }
+    pre .key { color: #7dd3fc; }
+    pre .string { color: #86efac; }
+    pre .number { color: #fcd34d; }
+    pre .bool { color: #f472b6; }
+    pre .null { color: var(--muted); }
+    pre .new { background: rgba(16,185,129,0.15); display: inline; padding: 1px 4px; border-radius: 3px; }
+    pre .comment { color: var(--muted); font-style: italic; }
+
+    .response-codes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .response-code { font-size: 12px; padding: 4px 10px; border-radius: 6px; font-weight: 600; }
+    .code-2xx { background: rgba(16,185,129,0.15); color: var(--get); }
+    .code-4xx { background: rgba(245,158,11,0.15); color: var(--patch); }
+
+    .auth-badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 4px; margin-left: 8px; }
+    .auth-required { background: rgba(245,158,11,0.15); color: var(--patch); }
+    .v2-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; background: rgba(16,185,129,0.2); color: var(--get); margin-left: 8px; }
+    .new-badge-inline { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; background: rgba(16,185,129,0.2); color: var(--get); margin-left: 8px; }
+
+    .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--text); }
+
+    .unchanged-note { background: var(--surface2); border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 13px; color: var(--muted); }
+    .unchanged-note a { color: var(--accent2); }
+
+    .section-divider { font-size: 18px; font-weight: 700; color: var(--text); margin: 48px 0 24px; padding-bottom: 12px; border-bottom: 2px solid var(--accent); }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>SocialOS API</h1>
+      <span>Organizations v2</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Navigation</div>
+      <a href="../index.html">← Back to Index</a>
+      <a href="v1.html">View v1 Docs</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">New in v2</div>
+      <a href="#org-stats"><span class="method-badge method-get">GET</span> Organization Stats <span class="new-badge">NEW</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Enhanced in v2</div>
+      <a href="#org-list"><span class="method-badge method-get">GET</span> List Organizations <span class="changed-badge">Enhanced</span></a>
+      <a href="#org-detail"><span class="method-badge method-get">GET</span> Get Organization <span class="changed-badge">Enhanced</span></a>
+      <a href="#member-list"><span class="method-badge method-get">GET</span> List Members <span class="changed-badge">Enhanced</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Unchanged from v1</div>
+      <a href="#unchanged">All Write Endpoints</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="breadcrumb">
+      <a href="../index.html">API Reference</a> / <a href="v2.html">Organizations</a> / v2
+    </div>
+
+    <h1 class="page-title">Organizations API <span class="version-badge">v2</span></h1>
+    <p class="subtitle">Enhanced organization management with richer data and new stats endpoint.</p>
+
+    <div class="changelog-box">
+      <h3>🚀 What's New in v2</h3>
+      <ul>
+        <li><strong>New Endpoint:</strong> <code>GET /api/v2/orgs/{id}/stats/</code> — Live organization metrics dashboard.</li>
+        <li><strong>Organization List/Detail:</strong> Now includes <code>member_count</code>, <code>updated_at</code>, and <code>plan_limits</code>.</li>
+        <li><strong>Member List:</strong> Now includes <code>joined_at</code> and <code>invited_by_email</code> for audit visibility.</li>
+        <li>All write/mutation endpoints are identical to v1 (same request/response contracts).</li>
+      </ul>
+    </div>
+
+    <!-- NEW: ORGANIZATION STATS -->
+    <h2 class="section-divider">New in v2</h2>
+
+    <section class="endpoint-section" id="org-stats">
+      <div class="endpoint-header">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/v2/orgs/{id}/stats/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+        <span class="new-badge-inline">NEW in v2</span>
+      </div>
+      <h3 class="endpoint-title">Organization Stats</h3>
+      <p class="endpoint-desc">
+        Returns a live summary of the organization's key metrics. All counts are computed in real-time (not cached).
+        Any active member can access this endpoint.
+      </p>
+
+      <div class="info-box">
+        <h4>Path Parameters</h4>
+        <table>
+          <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td><code>uuid</code></td><td>Organization UUID.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box highlight">
+        <h4>Success Response (200 OK)</h4>
+        <pre>{
+  <span class="key">"org_id"</span>: <span class="string">"550e8400-e29b-41d4-a716-446655440000"</span>,
+  <span class="key">"org_name"</span>: <span class="string">"Acme Corp"</span>,
+  <span class="key">"plan"</span>: <span class="string">"pro"</span>,
+  <span class="key">"member_count"</span>: <span class="number">12</span>,
+  <span class="key">"pending_join_requests"</span>: <span class="number">3</span>,
+  <span class="key">"pending_invitations"</span>: <span class="number">1</span>,
+  <span class="key">"plan_limits"</span>: {
+    <span class="key">"max_members"</span>: <span class="number">25</span>,
+    <span class="key">"max_posts"</span>: <span class="number">500</span>,
+    <span class="key">"max_social_accounts"</span>: <span class="number">10</span>,
+    <span class="key">"ai_credits"</span>: <span class="number">1000</span>
+  }
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Response Fields</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>org_id</code></td><td><code>uuid</code></td><td>Organization identifier.</td></tr>
+            <tr><td><code>org_name</code></td><td><code>string</code></td><td>Organization display name.</td></tr>
+            <tr><td><code>plan</code></td><td><code>string</code></td><td>Current subscription plan.</td></tr>
+            <tr><td><code>member_count</code></td><td><code>integer</code></td><td>Number of active members.</td></tr>
+            <tr><td><code>pending_join_requests</code></td><td><code>integer</code></td><td>Number of pending join requests awaiting review.</td></tr>
+            <tr><td><code>pending_invitations</code></td><td><code>integer</code></td><td>Number of unused invitation tokens.</td></tr>
+            <tr><td><code>plan_limits</code></td><td><code>object</code></td><td>Plan-specific limits (null values indicate unlimited).</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Plan Limits by Tier</h4>
+        <table>
+          <thead><tr><th>Plan</th><th>max_members</th><th>max_posts</th><th>max_social_accounts</th><th>ai_credits</th></tr></thead>
+          <tbody>
+            <tr><td><code>free</code></td><td>3</td><td>50</td><td>2</td><td>100</td></tr>
+            <tr><td><code>pro</code></td><td>25</td><td>500</td><td>10</td><td>1000</td></tr>
+            <tr><td><code>business</code></td><td>100</td><td>2000</td><td>50</td><td>5000</td></tr>
+            <tr><td><code>enterprise</code></td><td>null (unlimited)</td><td>null</td><td>null</td><td>null</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ENHANCED: ORGANIZATION LIST -->
+    <h2 class="section-divider">Enhanced Endpoints</h2>
+
+    <section class="endpoint-section" id="org-list">
+      <div class="endpoint-header">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/v2/orgs/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+        <span class="v2-badge">Enhanced Response</span>
+      </div>
+      <h3 class="endpoint-title">List Organizations</h3>
+      <p class="endpoint-desc">
+        Returns all organizations the authenticated user is an active member of.
+        <strong>v2 Enhancement:</strong> Response now includes <code>member_count</code>, <code>updated_at</code>, and <code>plan_limits</code>.
+      </p>
+
+      <div class="info-box highlight">
+        <h4>Success Response (200 OK) — v2 Enhanced</h4>
+        <pre>[
+  {
+    <span class="key">"id"</span>: <span class="string">"550e8400-e29b-41d4-a716-446655440000"</span>,
+    <span class="key">"name"</span>: <span class="string">"Acme Corp"</span>,
+    <span class="key">"slug"</span>: <span class="string">"acme-corp"</span>,
+    <span class="key">"schema_name"</span>: <span class="string">"org_acme_corp"</span>,
+    <span class="key">"plan"</span>: <span class="string">"pro"</span>,
+    <span class="key">"is_active"</span>: <span class="bool">true</span>,
+    <span class="key">"created_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>,
+    <span class="new"><span class="key">"updated_at"</span>: <span class="string">"2024-01-20T14:22:00Z"</span>,
+    <span class="key">"member_count"</span>: <span class="number">12</span>,
+    <span class="key">"plan_limits"</span>: {
+      <span class="key">"max_members"</span>: <span class="number">25</span>,
+      <span class="key">"max_posts"</span>: <span class="number">500</span>,
+      <span class="key">"max_social_accounts"</span>: <span class="number">10</span>,
+      <span class="key">"ai_credits"</span>: <span class="number">1000</span>
+    }</span>
+  }
+]</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>New Fields in v2</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>updated_at</code></td><td><code>datetime</code></td><td>ISO 8601 timestamp of last metadata change.</td></tr>
+            <tr><td><code>member_count</code></td><td><code>integer</code></td><td>Number of active members (computed via annotation, no N+1).</td></tr>
+            <tr><td><code>plan_limits</code></td><td><code>object</code></td><td>Denormalized plan caps for quick limit checks.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ENHANCED: ORGANIZATION DETAIL -->
+    <section class="endpoint-section" id="org-detail">
+      <div class="endpoint-header">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/v2/orgs/{id}/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+        <span class="v2-badge">Enhanced Response</span>
+      </div>
+      <h3 class="endpoint-title">Get Organization</h3>
+      <p class="endpoint-desc">
+        Retrieve details of a specific organization. Requester must be an active member.
+        <strong>v2 Enhancement:</strong> Same enriched fields as the list endpoint.
+      </p>
+
+      <div class="info-box highlight">
+        <h4>Success Response (200 OK) — v2 Enhanced</h4>
+        <pre>{
+  <span class="key">"id"</span>: <span class="string">"550e8400-e29b-41d4-a716-446655440000"</span>,
+  <span class="key">"name"</span>: <span class="string">"Acme Corp"</span>,
+  <span class="key">"slug"</span>: <span class="string">"acme-corp"</span>,
+  <span class="key">"schema_name"</span>: <span class="string">"org_acme_corp"</span>,
+  <span class="key">"plan"</span>: <span class="string">"pro"</span>,
+  <span class="key">"is_active"</span>: <span class="bool">true</span>,
+  <span class="key">"created_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>,
+  <span class="new"><span class="key">"updated_at"</span>: <span class="string">"2024-01-20T14:22:00Z"</span>,
+  <span class="key">"member_count"</span>: <span class="number">12</span>,
+  <span class="key">"plan_limits"</span>: { ... }</span>
+}</pre>
+      </div>
+    </section>
+
+    <!-- ENHANCED: MEMBER LIST -->
+    <section class="endpoint-section" id="member-list">
+      <div class="endpoint-header">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/v2/orgs/{id}/members/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+        <span class="v2-badge">Enhanced Response</span>
+      </div>
+      <h3 class="endpoint-title">List Members</h3>
+      <p class="endpoint-desc">
+        Returns all active members of the organization.
+        <strong>v2 Enhancement:</strong> Response now includes <code>joined_at</code> and <code>invited_by_email</code> for audit visibility.
+      </p>
+
+      <div class="info-box highlight">
+        <h4>Success Response (200 OK) — v2 Enhanced</h4>
+        <pre>[
+  {
+    <span class="key">"id"</span>: <span class="string">"member-uuid-here"</span>,
+    <span class="key">"user"</span>: {
+      <span class="key">"id"</span>: <span class="string">"user-uuid-here"</span>,
+      <span class="key">"email"</span>: <span class="string">"john@example.com"</span>,
+      <span class="key">"name"</span>: <span class="string">"John Doe"</span>
+    },
+    <span class="key">"organization_id"</span>: <span class="string">"org-uuid-here"</span>,
+    <span class="key">"role"</span>: <span class="string">"owner"</span>,
+    <span class="key">"is_active"</span>: <span class="bool">true</span>,
+    <span class="key">"created_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>,
+    <span class="new"><span class="key">"joined_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>,
+    <span class="key">"invited_by_email"</span>: <span class="null">null</span></span>  <span class="comment">// null for founding owner</span>
+  },
+  {
+    <span class="key">"id"</span>: <span class="string">"member-uuid-2"</span>,
+    <span class="key">"user"</span>: { ... },
+    <span class="key">"organization_id"</span>: <span class="string">"org-uuid-here"</span>,
+    <span class="key">"role"</span>: <span class="string">"admin"</span>,
+    <span class="key">"is_active"</span>: <span class="bool">true</span>,
+    <span class="key">"created_at"</span>: <span class="string">"2024-01-18T09:15:00Z"</span>,
+    <span class="new"><span class="key">"joined_at"</span>: <span class="string">"2024-01-18T09:15:00Z"</span>,
+    <span class="key">"invited_by_email"</span>: <span class="string">"john@example.com"</span></span>
+  }
+]</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>New Fields in v2</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>joined_at</code></td><td><code>datetime</code></td><td>Semantic alias for <code>created_at</code> — when the member joined.</td></tr>
+            <tr><td><code>invited_by_email</code></td><td><code>string|null</code></td><td>Email of the person who invited this member. Null for founding owner or if inviter was deleted.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- UNCHANGED ENDPOINTS -->
+    <h2 class="section-divider" id="unchanged">Unchanged from v1</h2>
+
+    <div class="unchanged-note">
+      ℹ️ All write/mutation endpoints are <strong>identical to v1</strong>. The request and response contracts have not changed.
+      See <a href="v1.html">v1 documentation</a> for full details on these endpoints.
+    </div>
+
+    <div class="info-box">
+      <h4>Unchanged Endpoints</h4>
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>POST</code></td><td><code>/api/v2/orgs/{id}/invite/</code></td><td>Invite member via email</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v2/orgs/join/</code></td><td>Join via invitation token</td></tr>
+          <tr><td><code>PATCH</code></td><td><code>/api/v2/orgs/{id}/members/{member_id}/</code></td><td>Update member role</td></tr>
+          <tr><td><code>DELETE</code></td><td><code>/api/v2/orgs/{id}/members/{member_id}/</code></td><td>Remove member</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v2/orgs/check-or-create/</code></td><td>Onboarding: check or create org</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v2/orgs/request-join/</code></td><td>Request to join organization</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/v2/orgs/my-join-requests/</code></td><td>List user's join requests</td></tr>
+          <tr><td><code>DELETE</code></td><td><code>/api/v2/orgs/my-join-requests/{request_id}/</code></td><td>Cancel join request</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/v2/orgs/{id}/join-requests/</code></td><td>List join requests (admin)</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v2/orgs/{id}/join-requests/{request_id}/approve/</code></td><td>Approve join request</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v2/orgs/{id}/join-requests/{request_id}/reject/</code></td><td>Reject join request</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box">
+      <h4>v1 vs v2 Comparison Summary</h4>
+      <table>
+        <thead><tr><th>Aspect</th><th>v1</th><th>v2</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Organization fields</td>
+            <td>7 fields</td>
+            <td>10 fields (+member_count, updated_at, plan_limits)</td>
+          </tr>
+          <tr>
+            <td>Member fields</td>
+            <td>6 fields</td>
+            <td>8 fields (+joined_at, invited_by_email)</td>
+          </tr>
+          <tr>
+            <td>Stats endpoint</td>
+            <td>Not available</td>
+            <td>GET /orgs/{id}/stats/</td>
+          </tr>
+          <tr>
+            <td>API calls for dashboard</td>
+            <td>Multiple (list + count queries)</td>
+            <td>Single stats endpoint</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

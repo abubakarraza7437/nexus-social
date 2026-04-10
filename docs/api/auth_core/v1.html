@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth Core v1 API — SocialOS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3348;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+      --get: #10b981;
+      --post: #3b82f6;
+      --patch: #f59e0b;
+      --delete: #ef4444;
+      --put: #8b5cf6;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; }
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrapper { display: flex; min-height: 100vh; }
+    nav.sidebar {
+      width: 280px; min-width: 280px; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 24px 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar .logo span { font-size: 12px; color: var(--muted); }
+    .sidebar-section { padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+    .sidebar a { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); transition: all 0.15s; }
+    .sidebar a:hover, .sidebar a.active { background: var(--surface2); color: var(--text); text-decoration: none; }
+    .sidebar .method-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
+    .sidebar .method-get { background: rgba(16,185,129,0.15); color: var(--get); }
+    .sidebar .method-post { background: rgba(59,130,246,0.15); color: var(--post); }
+    .sidebar .method-delete { background: rgba(239,68,68,0.15); color: var(--delete); }
+
+    main { flex: 1; max-width: 1000px; padding: 48px 56px; }
+    h1.page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+    .version-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 6px; background: rgba(99,102,241,0.2); color: var(--accent2); margin-left: 12px; vertical-align: middle; }
+
+    .endpoint-section { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+    .endpoint-section:last-child { border-bottom: none; }
+    .endpoint-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .endpoint-title { font-size: 20px; font-weight: 700; }
+    .method { display: inline-block; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; }
+    .method-get { background: rgba(16,185,129,0.15); color: var(--get); }
+    .method-post { background: rgba(59,130,246,0.15); color: var(--post); }
+    .method-patch { background: rgba(245,158,11,0.15); color: var(--patch); }
+    .method-delete { background: rgba(239,68,68,0.15); color: var(--delete); }
+    .endpoint-path { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 14px; color: var(--accent2); background: var(--surface2); padding: 4px 10px; border-radius: 6px; }
+
+    .endpoint-desc { color: var(--muted); font-size: 14px; margin-bottom: 20px; line-height: 1.7; }
+
+    .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+    .info-box h4 { font-size: 13px; font-weight: 700; color: var(--accent2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); color: var(--muted); font-weight: 600; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; color: #a78bfa; }
+    .required { color: var(--delete); font-size: 10px; font-weight: 600; }
+    .optional { color: var(--muted); font-size: 10px; }
+
+    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.6; }
+    pre .key { color: #7dd3fc; }
+    pre .string { color: #86efac; }
+    pre .number { color: #fcd34d; }
+    pre .bool { color: #f472b6; }
+
+    .response-codes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .response-code { font-size: 12px; padding: 4px 10px; border-radius: 6px; font-weight: 600; }
+    .code-2xx { background: rgba(16,185,129,0.15); color: var(--get); }
+    .code-4xx { background: rgba(245,158,11,0.15); color: var(--patch); }
+    .code-5xx { background: rgba(239,68,68,0.15); color: var(--delete); }
+
+    .auth-badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 4px; margin-left: 8px; }
+    .auth-public { background: rgba(16,185,129,0.15); color: var(--get); }
+    .auth-required { background: rgba(245,158,11,0.15); color: var(--patch); }
+
+    .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>SocialOS API</h1>
+      <span>Auth Core v1</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Navigation</div>
+      <a href="../index.html">← Back to Index</a>
+      <a href="v2.html">View v2 Docs</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Endpoints</div>
+      <a href="#signup"><span class="method-badge method-post">POST</span> Signup</a>
+      <a href="#login"><span class="method-badge method-post">POST</span> Login</a>
+      <a href="#refresh"><span class="method-badge method-post">POST</span> Refresh Token</a>
+      <a href="#logout"><span class="method-badge method-post">POST</span> Logout</a>
+      <a href="#forgot-password"><span class="method-badge method-post">POST</span> Forgot Password</a>
+      <a href="#reset-password"><span class="method-badge method-post">POST</span> Reset Password</a>
+      <a href="#verify-email"><span class="method-badge method-get">GET</span> Verify Email</a>
+      <a href="#resend-verification"><span class="method-badge method-post">POST</span> Resend Verification</a>
+      <a href="#delete-account"><span class="method-badge method-delete">DEL</span> Delete Account</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="breadcrumb">
+      <a href="../index.html">API Reference</a> / <a href="v1.html">Auth Core</a> / v1
+    </div>
+
+    <h1 class="page-title">Auth Core API <span class="version-badge">v1</span></h1>
+    <p class="subtitle">User registration, JWT authentication, password reset, email verification, and account management.</p>
+
+    <!-- SIGNUP -->
+    <section class="endpoint-section" id="signup">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/auth/signup/</span>
+        <span class="auth-badge auth-public">Public</span>
+      </div>
+      <h3 class="endpoint-title">Register New User</h3>
+      <p class="endpoint-desc">
+        Create a new user account. After successful registration, a verification email is sent to the provided email address.
+        The user must verify their email before they can create or join organizations.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>email</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Valid email address. Must be unique across the platform.</td>
+            </tr>
+            <tr>
+              <td><code>password</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Minimum 10 characters. Must pass Django's password validation (common passwords rejected).</td>
+            </tr>
+            <tr>
+              <td><code>name</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Display name (max 255 characters).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Example Request</h4>
+        <pre>{
+  <span class="key">"email"</span>: <span class="string">"john@example.com"</span>,
+  <span class="key">"password"</span>: <span class="string">"SecurePass123!"</span>,
+  <span class="key">"name"</span>: <span class="string">"John Doe"</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (201 Created)</h4>
+        <pre>{
+  <span class="key">"detail"</span>: <span class="string">"Account created. Please verify your email."</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Error Responses</h4>
+        <div class="response-codes">
+          <span class="response-code code-4xx">400 Bad Request</span>
+          <span class="response-code code-4xx">422 Validation Error</span>
+          <span class="response-code code-4xx">429 Rate Limited</span>
+        </div>
+        <pre style="margin-top: 12px;">{
+  <span class="key">"email"</span>: [<span class="string">"This email is already registered. Please sign in instead."</span>]
+}</pre>
+      </div>
+    </section>
+
+    <!-- LOGIN -->
+    <section class="endpoint-section" id="login">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/auth/login/</span>
+        <span class="auth-badge auth-public">Public</span>
+      </div>
+      <h3 class="endpoint-title">Login (Obtain JWT Tokens)</h3>
+      <p class="endpoint-desc">
+        Authenticate with email and password to receive a JWT access/refresh token pair.
+        The access token contains claims for <code>org</code>, <code>role</code>, <code>name</code>, <code>email</code>, and <code>mfa_enabled</code>.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>email</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Registered email address.</td>
+            </tr>
+            <tr>
+              <td><code>password</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Account password.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Example Request</h4>
+        <pre>{
+  <span class="key">"email"</span>: <span class="string">"john@example.com"</span>,
+  <span class="key">"password"</span>: <span class="string">"SecurePass123!"</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>{
+  <span class="key">"access"</span>: <span class="string">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span>,
+  <span class="key">"refresh"</span>: <span class="string">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span>
+}</pre>
+        <p style="margin-top: 12px; font-size: 12px; color: var(--muted);">
+          <strong>JWT Payload Claims:</strong> <code>org</code> (UUID|null), <code>role</code> (owner|admin|member|null), 
+          <code>name</code>, <code>email</code>, <code>mfa_enabled</code> (boolean)
+        </p>
+      </div>
+
+      <div class="info-box">
+        <h4>Error Responses</h4>
+        <div class="response-codes">
+          <span class="response-code code-4xx">401 Unauthorized</span>
+          <span class="response-code code-4xx">429 Rate Limited</span>
+        </div>
+        <pre style="margin-top: 12px;">{
+  <span class="key">"detail"</span>: <span class="string">"No active account found with the given credentials"</span>
+}</pre>
+      </div>
+    </section>
+
+    <!-- REFRESH -->
+    <section class="endpoint-section" id="refresh">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/auth/refresh/</span>
+        <span class="auth-badge auth-public">Public</span>
+      </div>
+      <h3 class="endpoint-title">Refresh Access Token</h3>
+      <p class="endpoint-desc">
+        Exchange a valid refresh token for a new access token. The refresh token is rotated (blacklisted and replaced) on each use.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>refresh</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Valid refresh token from login or previous refresh.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>{
+  <span class="key">"access"</span>: <span class="string">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span>,
+  <span class="key">"refresh"</span>: <span class="string">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Error Responses</h4>
+        <div class="response-codes">
+          <span class="response-code code-4xx">401 Token Invalid/Expired</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOGOUT -->
+    <section class="endpoint-section" id="logout">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/auth/logout/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+      </div>
+      <h3 class="endpoint-title">Logout (Blacklist Token)</h3>
+      <p class="endpoint-desc">
+        Invalidate the current session by blacklisting the refresh token. The access token remains valid until expiry but cannot be refreshed.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Headers</h4>
+        <table>
+          <thead><tr><th>Header</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>Authorization</code></td>
+              <td><code>Bearer &lt;access_token&gt;</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>refresh</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Refresh token to blacklist.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (204 No Content)</h4>
+        <p style="font-size: 13px; color: var(--muted);">Empty response body.</p>
+      </div>
+
+      <div class="info-box">
+        <h4>Error Responses</h4>
+        <div class="response-codes">
+          <span class="response-code code-4xx">400 Bad Request</span>
+          <span class="response-code code-4xx">401 Unauthorized</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FORGOT PASSWORD -->
+    <section class="endpoint-section" id="forgot-password">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/auth/forgot-password/</span>
+        <span class="auth-badge auth-public">Public</span>
+      </div>
+      <h3 class="endpoint-title">Forgot Password</h3>
+      <p class="endpoint-desc">
+        Initiate a password reset flow. If the email exists and the account is active, a reset link is sent.
+        Previous unused reset tokens for this user are invalidated.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>email</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Email address of the account.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>{
+  <span class="key">"detail"</span>: <span class="string">"If that email is registered, you will receive a reset link."</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Error Responses</h4>
+        <div class="response-codes">
+          <span class="response-code code-4xx">404 User Not Found</span>
+          <span class="response-code code-4xx">429 Rate Limited</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESET PASSWORD -->
+    <section class="endpoint-section" id="reset-password">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/auth/reset-password/</span>
+        <span class="auth-badge auth-public">Public</span>
+      </div>
+      <h3 class="endpoint-title">Reset Password</h3>
+      <p class="endpoint-desc">
+        Complete the password reset by providing the token from the email and a new password.
+        Token expires after 1 hour and can only be used once.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>token</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Reset token from the email link.</td>
+            </tr>
+            <tr>
+              <td><code>password</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>New password (min 10 characters, must pass validation).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>{
+  <span class="key">"detail"</span>: <span class="string">"Password updated successfully."</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Error Responses</h4>
+        <div class="response-codes">
+          <span class="response-code code-4xx">400 Invalid/Expired Token</span>
+          <span class="response-code code-4xx">422 Validation Error</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- VERIFY EMAIL -->
+    <section class="endpoint-section" id="verify-email">
+      <div class="endpoint-header">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/v1/auth/verify-email/</span>
+        <span class="auth-badge auth-public">Public</span>
+      </div>
+      <h3 class="endpoint-title">Verify Email</h3>
+      <p class="endpoint-desc">
+        Verify the user's email address using the token from the verification email.
+        Token expires after 24 hours and can only be used once.
+      </p>
+
+      <div class="info-box">
+        <h4>Query Parameters</h4>
+        <table>
+          <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>token</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Verification token from the email link.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Example Request</h4>
+        <pre>GET /api/v1/auth/verify-email/?token=abc123xyz...</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>{
+  <span class="key">"detail"</span>: <span class="string">"Email verified successfully. You can now sign in."</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Error Responses</h4>
+        <div class="response-codes">
+          <span class="response-code code-4xx">400 Invalid/Expired/Used Token</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESEND VERIFICATION -->
+    <section class="endpoint-section" id="resend-verification">
+      <div class="endpoint-header">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/v1/auth/resend-verification/</span>
+        <span class="auth-badge auth-public">Public</span>
+      </div>
+      <h3 class="endpoint-title">Resend Verification Email</h3>
+      <p class="endpoint-desc">
+        Request a new verification email. Previous unused tokens are invalidated.
+        Always returns 200 to prevent email enumeration attacks.
+      </p>
+
+      <div class="info-box">
+        <h4>Request Body</h4>
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>email</code> <span class="required">required</span></td>
+              <td><code>string</code></td>
+              <td>Email address to resend verification to.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (200 OK)</h4>
+        <pre>{
+  <span class="key">"detail"</span>: <span class="string">"If that email is registered and unverified, a new link has been sent."</span>
+}</pre>
+      </div>
+
+      <div class="info-box">
+        <h4>Rate Limiting</h4>
+        <p style="font-size: 13px; color: var(--muted);">
+          This endpoint has stricter rate limiting to prevent abuse. Limit: 3 requests per hour per IP.
+        </p>
+      </div>
+    </section>
+
+    <!-- DELETE ACCOUNT -->
+    <section class="endpoint-section" id="delete-account">
+      <div class="endpoint-header">
+        <span class="method method-delete">DELETE</span>
+        <span class="endpoint-path">/api/v1/auth/delete-account/</span>
+        <span class="auth-badge auth-required">Auth Required</span>
+      </div>
+      <h3 class="endpoint-title">Delete Account</h3>
+      <p class="endpoint-desc">
+        Permanently delete the authenticated user's account. This action is irreversible.
+      </p>
+
+      <div class="info-box">
+        <h4>Behavior</h4>
+        <ul style="font-size: 13px; color: var(--muted); padding-left: 20px; line-height: 1.8;">
+          <li>If user is an <strong>owner</strong> of any organization, that organization is marked inactive and all members are notified.</li>
+          <li>If user is a <strong>member</strong> of organizations, the owners are notified of the departure.</li>
+          <li>All user data, tokens, and memberships are permanently deleted.</li>
+          <li>Posts authored by the user have their <code>author_id</code> set to NULL.</li>
+        </ul>
+      </div>
+
+      <div class="info-box">
+        <h4>Request Headers</h4>
+        <table>
+          <thead><tr><th>Header</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>Authorization</code></td>
+              <td><code>Bearer &lt;access_token&gt;</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <h4>Success Response (204 No Content)</h4>
+        <p style="font-size: 13px; color: var(--muted);">Empty response body. Account has been deleted.</p>
+      </div>
+
+      <div class="info-box">
+        <h4>Error Responses</h4>
+        <div class="response-codes">
+          <span class="response-code code-4xx">401 Unauthorized</span>
+          <span class="response-code code-4xx">404 User Not Found</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audit API — SocialOS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3348;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; }
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrapper { display: flex; min-height: 100vh; }
+    nav.sidebar {
+      width: 260px; min-width: 260px; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 24px 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar .logo span { font-size: 12px; color: var(--muted); }
+    .sidebar-section { padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+    .sidebar a { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); transition: all 0.15s; }
+    .sidebar a:hover, .sidebar a.active { background: var(--surface2); color: var(--text); text-decoration: none; }
+
+    main { flex: 1; max-width: 900px; padding: 48px 56px; }
+    h1.page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+    .internal-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 6px; background: rgba(245,158,11,0.2); color: #f59e0b; margin-left: 12px; vertical-align: middle; }
+
+    .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--text); }
+
+    .internal-notice { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(239,68,68,0.1)); border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 40px; }
+    .internal-notice h2 { font-size: 24px; margin-bottom: 12px; color: #f59e0b; }
+    .internal-notice p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+    .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+    .info-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--accent2); }
+    .info-box h4 { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); color: var(--muted); font-weight: 600; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a78bfa; }
+
+    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; }
+    pre .key { color: #7dd3fc; }
+    pre .string { color: #86efac; }
+    pre .number { color: #fcd34d; }
+    pre .bool { color: #f472b6; }
+    pre .null { color: var(--muted); }
+    pre .comment { color: var(--muted); font-style: italic; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>SocialOS API</h1>
+      <span>Audit</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Navigation</div>
+      <a href="../index.html">← Back to Index</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Components</div>
+      <a href="#middleware">Audit Middleware</a>
+      <a href="#events">Event Types</a>
+      <a href="#retention">Data Retention</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="breadcrumb">
+      <a href="../index.html">API Reference</a> / Audit
+    </div>
+
+    <h1 class="page-title">Audit <span class="internal-badge">Internal Only</span></h1>
+    <p class="subtitle">Request audit logging and compliance records for enterprise customers.</p>
+
+    <div class="internal-notice">
+      <h2>⚠️ Internal Service</h2>
+      <p>The Audit system is an internal service with no public REST API. Audit logs are automatically captured by middleware and stored for compliance purposes.</p>
+    </div>
+
+    <div class="info-box">
+      <h3>Architecture</h3>
+      <table>
+        <thead><tr><th>Component</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Middleware</strong></td><td><code>AuditMiddleware</code> — logs all API requests</td></tr>
+          <tr><td><strong>Kafka Consumer</strong></td><td>Consumes from <code>socialos.oauth.token_refreshed</code></td></tr>
+          <tr><td><strong>Storage</strong></td><td>PostgreSQL with partitioning by month</td></tr>
+          <tr><td><strong>Retention</strong></td><td>Configurable per plan (90 days to unlimited)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="middleware">
+      <h3>Audit Middleware</h3>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">
+        The <code>AuditMiddleware</code> automatically logs all API requests with relevant metadata.
+      </p>
+      <pre><span class="comment"># apps/audit/middleware.py</span>
+
+class AuditMiddleware:
+    <span class="string">"""Logs all API requests for compliance and debugging."""</span>
+    
+    def __call__(self, request):
+        <span class="comment"># Capture request metadata</span>
+        audit_entry = {
+            "timestamp": timezone.now(),
+            "user_id": request.user.id if request.user.is_authenticated else None,
+            "org_id": get_current_org_id(request),
+            "method": request.method,
+            "path": request.path,
+            "ip_address": get_client_ip(request),
+            "user_agent": request.META.get("HTTP_USER_AGENT"),
+            "request_id": request.META.get("HTTP_X_REQUEST_ID"),
+        }
+        
+        response = self.get_response(request)
+        
+        <span class="comment"># Add response metadata</span>
+        audit_entry["status_code"] = response.status_code
+        audit_entry["response_time_ms"] = calculate_response_time()
+        
+        <span class="comment"># Async write to avoid blocking</span>
+        create_audit_log.delay(audit_entry)
+        
+        return response</pre>
+    </div>
+
+    <div class="info-box">
+      <h3>Audit Log Schema</h3>
+      <pre>{
+  <span class="key">"id"</span>: <span class="string">"audit-uuid"</span>,
+  <span class="key">"timestamp"</span>: <span class="string">"2024-01-15T10:30:00.123Z"</span>,
+  <span class="key">"user_id"</span>: <span class="string">"user-uuid"</span>,
+  <span class="key">"user_email"</span>: <span class="string">"john@example.com"</span>,
+  <span class="key">"org_id"</span>: <span class="string">"org-uuid"</span>,
+  <span class="key">"org_name"</span>: <span class="string">"Acme Corp"</span>,
+  <span class="key">"event_type"</span>: <span class="string">"api.request"</span>,
+  <span class="key">"method"</span>: <span class="string">"POST"</span>,
+  <span class="key">"path"</span>: <span class="string">"/api/v1/posts/"</span>,
+  <span class="key">"status_code"</span>: <span class="number">201</span>,
+  <span class="key">"ip_address"</span>: <span class="string">"192.168.1.100"</span>,
+  <span class="key">"user_agent"</span>: <span class="string">"Mozilla/5.0..."</span>,
+  <span class="key">"request_id"</span>: <span class="string">"req-uuid"</span>,
+  <span class="key">"response_time_ms"</span>: <span class="number">45</span>,
+  <span class="key">"metadata"</span>: {
+    <span class="key">"resource_id"</span>: <span class="string">"post-uuid"</span>,
+    <span class="key">"action"</span>: <span class="string">"create"</span>
+  }
+}</pre>
+    </div>
+
+    <div class="info-box" id="events">
+      <h3>Audited Event Types</h3>
+      <table>
+        <thead><tr><th>Event Type</th><th>Description</th><th>Logged Data</th></tr></thead>
+        <tbody>
+          <tr><td><code>api.request</code></td><td>All API requests</td><td>Method, path, status, response time</td></tr>
+          <tr><td><code>auth.login</code></td><td>User login</td><td>IP, user agent, success/failure</td></tr>
+          <tr><td><code>auth.logout</code></td><td>User logout</td><td>Session duration</td></tr>
+          <tr><td><code>auth.password_reset</code></td><td>Password reset</td><td>IP, success/failure</td></tr>
+          <tr><td><code>member.added</code></td><td>Member added to org</td><td>Role, invited by</td></tr>
+          <tr><td><code>member.removed</code></td><td>Member removed from org</td><td>Removed by, reason</td></tr>
+          <tr><td><code>member.role_changed</code></td><td>Member role changed</td><td>Old role, new role, changed by</td></tr>
+          <tr><td><code>oauth.connected</code></td><td>Social account connected</td><td>Platform, account ID</td></tr>
+          <tr><td><code>oauth.disconnected</code></td><td>Social account disconnected</td><td>Platform, disconnected by</td></tr>
+          <tr><td><code>oauth.token_refreshed</code></td><td>OAuth token refreshed</td><td>Platform, success/failure</td></tr>
+          <tr><td><code>post.created</code></td><td>Post created</td><td>Author, platforms</td></tr>
+          <tr><td><code>post.published</code></td><td>Post published</td><td>Platforms, publish time</td></tr>
+          <tr><td><code>post.deleted</code></td><td>Post deleted</td><td>Deleted by, reason</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="retention">
+      <h3>Data Retention by Plan</h3>
+      <table>
+        <thead><tr><th>Plan</th><th>Retention Period</th><th>Export Available</th></tr></thead>
+        <tbody>
+          <tr><td><code>free</code></td><td>30 days</td><td>No</td></tr>
+          <tr><td><code>pro</code></td><td>90 days</td><td>CSV export</td></tr>
+          <tr><td><code>business</code></td><td>1 year</td><td>CSV + JSON export</td></tr>
+          <tr><td><code>enterprise</code></td><td>Unlimited (configurable)</td><td>Full API access + SIEM integration</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box">
+      <h3>Compliance Features (Enterprise)</h3>
+      <table>
+        <thead><tr><th>Feature</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SIEM Integration</strong></td><td>Forward logs to Splunk, Datadog, or custom endpoints</td></tr>
+          <tr><td><strong>Immutable Logs</strong></td><td>Write-once storage with cryptographic verification</td></tr>
+          <tr><td><strong>Custom Retention</strong></td><td>Configure retention per event type</td></tr>
+          <tr><td><strong>Compliance Reports</strong></td><td>SOC 2, GDPR, HIPAA report generation</td></tr>
+          <tr><td><strong>Real-time Alerts</strong></td><td>Alert on suspicious activity patterns</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

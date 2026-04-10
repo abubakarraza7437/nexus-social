@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Automation API — SocialOS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3348;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; }
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrapper { display: flex; min-height: 100vh; }
+    nav.sidebar {
+      width: 260px; min-width: 260px; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 24px 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar .logo span { font-size: 12px; color: var(--muted); }
+    .sidebar-section { padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+    .sidebar a { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); transition: all 0.15s; }
+    .sidebar a:hover, .sidebar a.active { background: var(--surface2); color: var(--text); text-decoration: none; }
+
+    main { flex: 1; max-width: 900px; padding: 48px 56px; }
+    h1.page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+    .stub-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 6px; background: rgba(100,100,100,0.2); color: var(--muted); margin-left: 12px; vertical-align: middle; }
+
+    .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--text); }
+
+    .coming-soon { background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1)); border: 1px solid var(--border); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 40px; }
+    .coming-soon h2 { font-size: 24px; margin-bottom: 12px; }
+    .coming-soon p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+    .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+    .info-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--accent2); }
+    .info-box h4 { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); color: var(--muted); font-weight: 600; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a78bfa; }
+
+    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; }
+    pre .key { color: #7dd3fc; }
+    pre .string { color: #86efac; }
+    pre .number { color: #fcd34d; }
+    pre .bool { color: #f472b6; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>SocialOS API</h1>
+      <span>Automation</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Navigation</div>
+      <a href="../index.html">← Back to Index</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Planned Endpoints</div>
+      <a href="#rules">Automation Rules</a>
+      <a href="#triggers">Triggers</a>
+      <a href="#actions">Actions</a>
+      <a href="#history">Execution History</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="breadcrumb">
+      <a href="../index.html">API Reference</a> / Automation
+    </div>
+
+    <h1 class="page-title">Automation API <span class="stub-badge">Coming Soon</span></h1>
+    <p class="subtitle">Rule-based automation triggers for content workflows — if-this-then-that style automation.</p>
+
+    <div class="coming-soon">
+      <h2>🚧 Under Development</h2>
+      <p>The Automation API is currently being implemented. This documentation outlines the planned endpoints and data models.</p>
+    </div>
+
+    <div class="info-box" id="rules">
+      <h3>Planned: Automation Rules</h3>
+      <h4>Endpoints</h4>
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><code>/api/v1/automation/rules/</code></td><td>List all automation rules</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/automation/rules/</code></td><td>Create new rule</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/v1/automation/rules/{id}/</code></td><td>Get rule details</td></tr>
+          <tr><td><code>PATCH</code></td><td><code>/api/v1/automation/rules/{id}/</code></td><td>Update rule</td></tr>
+          <tr><td><code>DELETE</code></td><td><code>/api/v1/automation/rules/{id}/</code></td><td>Delete rule</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/automation/rules/{id}/enable/</code></td><td>Enable rule</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/automation/rules/{id}/disable/</code></td><td>Disable rule</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box">
+      <h3>Rule Data Model</h3>
+      <pre>{
+  <span class="key">"id"</span>: <span class="string">"rule-uuid"</span>,
+  <span class="key">"name"</span>: <span class="string">"Auto-approve posts from admins"</span>,
+  <span class="key">"description"</span>: <span class="string">"Automatically approve posts created by admin users"</span>,
+  <span class="key">"trigger"</span>: {
+    <span class="key">"type"</span>: <span class="string">"post.created"</span>,
+    <span class="key">"conditions"</span>: [
+      { <span class="key">"field"</span>: <span class="string">"author.role"</span>, <span class="key">"operator"</span>: <span class="string">"in"</span>, <span class="key">"value"</span>: [<span class="string">"admin"</span>, <span class="string">"owner"</span>] }
+    ]
+  },
+  <span class="key">"actions"</span>: [
+    { <span class="key">"type"</span>: <span class="string">"post.approve"</span> },
+    { <span class="key">"type"</span>: <span class="string">"notification.send"</span>, <span class="key">"params"</span>: { <span class="key">"message"</span>: <span class="string">"Post auto-approved"</span> } }
+  ],
+  <span class="key">"is_enabled"</span>: <span class="bool">true</span>,
+  <span class="key">"execution_count"</span>: <span class="number">42</span>,
+  <span class="key">"last_executed_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>,
+  <span class="key">"created_at"</span>: <span class="string">"2024-01-01T00:00:00Z"</span>
+}</pre>
+    </div>
+
+    <div class="info-box" id="triggers">
+      <h3>Available Triggers</h3>
+      <table>
+        <thead><tr><th>Trigger</th><th>Description</th><th>Available Conditions</th></tr></thead>
+        <tbody>
+          <tr><td><code>post.created</code></td><td>When a new post is created</td><td>author.role, platforms, has_media</td></tr>
+          <tr><td><code>post.submitted</code></td><td>When a post is submitted for approval</td><td>author.role, platforms</td></tr>
+          <tr><td><code>post.published</code></td><td>When a post is published</td><td>platform, engagement_threshold</td></tr>
+          <tr><td><code>post.failed</code></td><td>When publishing fails</td><td>platform, error_type</td></tr>
+          <tr><td><code>member.joined</code></td><td>When a new member joins</td><td>role, invited_by</td></tr>
+          <tr><td><code>schedule.triggered</code></td><td>When a schedule fires</td><td>schedule_id, time_of_day</td></tr>
+          <tr><td><code>engagement.threshold</code></td><td>When engagement hits threshold</td><td>metric, threshold, platform</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="actions">
+      <h3>Available Actions</h3>
+      <table>
+        <thead><tr><th>Action</th><th>Description</th><th>Parameters</th></tr></thead>
+        <tbody>
+          <tr><td><code>post.approve</code></td><td>Auto-approve the post</td><td>—</td></tr>
+          <tr><td><code>post.reject</code></td><td>Auto-reject the post</td><td>reason</td></tr>
+          <tr><td><code>post.schedule</code></td><td>Schedule the post</td><td>delay_minutes, time</td></tr>
+          <tr><td><code>notification.send</code></td><td>Send notification</td><td>message, recipients</td></tr>
+          <tr><td><code>email.send</code></td><td>Send email</td><td>template, recipients</td></tr>
+          <tr><td><code>webhook.call</code></td><td>Call external webhook</td><td>url, method, headers</td></tr>
+          <tr><td><code>tag.add</code></td><td>Add tags to content</td><td>tags</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" id="history">
+      <h3>Planned: Execution History</h3>
+      <h4>GET /api/v1/automation/rules/{id}/history/</h4>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">View execution history for a rule.</p>
+      <pre>{
+  <span class="key">"executions"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="string">"execution-uuid"</span>,
+      <span class="key">"rule_id"</span>: <span class="string">"rule-uuid"</span>,
+      <span class="key">"trigger_event"</span>: <span class="string">"post.created"</span>,
+      <span class="key">"trigger_data"</span>: { <span class="key">"post_id"</span>: <span class="string">"post-uuid"</span> },
+      <span class="key">"actions_executed"</span>: [
+        { <span class="key">"type"</span>: <span class="string">"post.approve"</span>, <span class="key">"success"</span>: <span class="bool">true</span> }
+      ],
+      <span class="key">"executed_at"</span>: <span class="string">"2024-01-15T10:30:00Z"</span>,
+      <span class="key">"duration_ms"</span>: <span class="number">45</span>
+    }
+  ],
+  <span class="key">"total"</span>: <span class="number">42</span>,
+  <span class="key">"page"</span>: <span class="number">1</span>
+}</pre>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

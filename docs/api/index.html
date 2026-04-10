@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialOS API Reference</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3348;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+      --get: #10b981;
+      --post: #3b82f6;
+      --patch: #f59e0b;
+      --delete: #ef4444;
+      --put: #8b5cf6;
+      --green: #10b981;
+      --yellow: #f59e0b;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; }
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Layout */
+    .wrapper { display: flex; min-height: 100vh; }
+    nav.sidebar {
+      width: 260px; min-width: 260px; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 24px 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar .logo span { font-size: 12px; color: var(--muted); }
+    .sidebar-section { padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+    .sidebar a { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 13px; color: var(--muted); transition: all 0.15s; }
+    .sidebar a:hover, .sidebar a.active { background: var(--surface2); color: var(--text); text-decoration: none; }
+    .sidebar a .badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 600; margin-left: auto; }
+    .v1 { background: rgba(99,102,241,0.15); color: var(--accent2); }
+    .v2 { background: rgba(16,185,129,0.15); color: var(--green); }
+    .stub { background: rgba(100,100,100,0.15); color: var(--muted); }
+
+    /* Main */
+    main { flex: 1; max-width: 1100px; padding: 48px 56px; }
+    h1.page-title { font-size: 36px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 16px; margin-bottom: 48px; }
+    h2 { font-size: 22px; font-weight: 700; margin: 40px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+
+    /* Overview cards */
+    .app-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 40px; }
+    .app-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.15s; }
+    .app-card:hover { border-color: var(--accent); }
+    .app-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .app-card-title { font-size: 15px; font-weight: 600; }
+    .status-badge { font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 99px; }
+    .status-live { background: rgba(16,185,129,0.15); color: #10b981; }
+    .status-stub { background: rgba(100,100,100,0.12); color: var(--muted); }
+    .app-card p { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+    .app-card-links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .version-link { font-size: 12px; padding: 4px 12px; border-radius: 6px; font-weight: 600; transition: opacity 0.15s; }
+    .version-link:hover { opacity: 0.85; text-decoration: none; }
+    .version-link.v1 { background: rgba(99,102,241,0.2); color: var(--accent2); }
+    .version-link.v2 { background: rgba(16,185,129,0.2); color: #10b981; }
+    .version-link.disabled { background: rgba(100,100,100,0.1); color: var(--muted); cursor: not-allowed; pointer-events: none; }
+
+    /* Info table */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); color: var(--muted); font-weight: 600; text-align: left; padding: 10px 14px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; color: #a78bfa; }
+
+    /* Method pill */
+    .method { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .method-get { background: rgba(16,185,129,0.15); color: #10b981; }
+    .method-post { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .method-patch { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .method-delete { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+    /* Global config box */
+    .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    .info-box h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--accent2); }
+    .kv { display: grid; grid-template-columns: 180px 1fr; gap: 6px 16px; font-size: 13px; }
+    .kv .key { color: var(--muted); }
+    .kv .val code { font-size: 12px; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>SocialOS API</h1>
+      <span>Reference Documentation</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Overview</div>
+      <a href="index.html" class="active">Home</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Auth Core</div>
+      <a href="auth_core/v1.html">Authentication <span class="badge v1">v1</span></a>
+      <a href="auth_core/v2.html">Authentication <span class="badge v2">v2</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Organizations</div>
+      <a href="organizations/v1.html">Organizations <span class="badge v1">v1</span></a>
+      <a href="organizations/v2.html">Organizations <span class="badge v2">v2</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Content & Publishing</div>
+      <a href="social_accounts/index.html">Social Accounts <span class="badge stub">planned</span></a>
+      <a href="content/index.html">Content / Posts <span class="badge stub">planned</span></a>
+      <a href="scheduler/index.html">Scheduler <span class="badge stub">planned</span></a>
+      <a href="publisher/index.html">Publisher <span class="badge stub">internal</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Intelligence</div>
+      <a href="analytics/index.html">Analytics <span class="badge stub">planned</span></a>
+      <a href="inbox/index.html">Inbox <span class="badge stub">planned</span></a>
+      <a href="ai_engine/index.html">AI Engine <span class="badge stub">planned</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Platform</div>
+      <a href="notifications/index.html">Notifications <span class="badge stub">internal</span></a>
+      <a href="automation/index.html">Automation <span class="badge stub">planned</span></a>
+      <a href="audit/index.html">Audit <span class="badge stub">internal</span></a>
+    </div>
+  </nav>
+
+  <main>
+    <h1 class="page-title">SocialOS API Reference</h1>
+    <p class="subtitle">Multi-tenant social media management platform — Django 5.x + DRF + Celery</p>
+
+    <h2>Global Configuration</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;">
+      <div class="info-box">
+        <h3>Base URLs</h3>
+        <div class="kv">
+          <span class="key">V1 (stable)</span><span class="val"><code>/api/v1/</code></span>
+          <span class="key">V2 (enhanced)</span><span class="val"><code>/api/v2/</code></span>
+          <span class="key">Swagger v1</span><span class="val"><code>/api/docs/v1/</code></span>
+          <span class="key">Swagger v2</span><span class="val"><code>/api/docs/v2/</code></span>
+          <span class="key">ReDoc v1</span><span class="val"><code>/api/redoc/v1/</code></span>
+          <span class="key">ReDoc v2</span><span class="val"><code>/api/redoc/v2/</code></span>
+        </div>
+      </div>
+      <div class="info-box">
+        <h3>Authentication</h3>
+        <div class="kv">
+          <span class="key">Type</span><span class="val"><code>JWT (Bearer)</code></span>
+          <span class="key">Algorithm (prod)</span><span class="val"><code>RS256</code></span>
+          <span class="key">Algorithm (dev)</span><span class="val"><code>HS256</code></span>
+          <span class="key">Access TTL</span><span class="val"><code>15 min (prod) / 1 hr (dev)</code></span>
+          <span class="key">Refresh TTL</span><span class="val"><code>7 days (rotating)</code></span>
+          <span class="key">Header</span><span class="val"><code>Authorization: Bearer &lt;token&gt;</code></span>
+        </div>
+      </div>
+      <div class="info-box">
+        <h3>Response Envelope</h3>
+        <div class="kv">
+          <span class="key">Format</span><span class="val">Every response uses <code>data / meta / errors</code></span>
+          <span class="key">Pagination</span><span class="val"><code>?page=&amp;page_size=</code> (default 20, max 100)</span>
+          <span class="key">Timestamps</span><span class="val"><code>UTC</code>, format <code>YYYY-MM-DDTHH:MM:SSZ</code></span>
+        </div>
+      </div>
+      <div class="info-box">
+        <h3>Rate Limiting</h3>
+        <div class="kv">
+          <span class="key">Anonymous</span><span class="val"><code>100/hour</code> (IP-based)</span>
+          <span class="key">Auth endpoints</span><span class="val"><code>20/hour</code> (IP-based)</span>
+          <span class="key">Free plan</span><span class="val"><code>100/day</code> (org-based)</span>
+          <span class="key">Pro plan</span><span class="val"><code>10,000/day</code></span>
+          <span class="key">Business plan</span><span class="val"><code>50,000/day</code></span>
+          <span class="key">Enterprise</span><span class="val"><code>Unlimited</code></span>
+        </div>
+      </div>
+    </div>
+
+    <h2>HTTP Status Codes</h2>
+    <table style="margin-bottom:32px;">
+      <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>200</code></td><td>Success</td></tr>
+        <tr><td><code>201</code></td><td>Resource created</td></tr>
+        <tr><td><code>204</code></td><td>No content (successful delete)</td></tr>
+        <tr><td><code>400</code></td><td>Malformed request (bad JSON)</td></tr>
+        <tr><td><code>401</code></td><td>Unauthenticated</td></tr>
+        <tr><td><code>403</code></td><td>Forbidden (insufficient role)</td></tr>
+        <tr><td><code>422</code></td><td>Validation error (field-level)</td></tr>
+        <tr><td><code>429</code></td><td>Rate limited</td></tr>
+      </tbody>
+    </table>
+
+    <h2>RBAC Role Hierarchy</h2>
+    <table style="margin-bottom:32px;">
+      <thead><tr><th>Role</th><th>Level</th><th>Capabilities</th></tr></thead>
+      <tbody>
+        <tr><td><code>owner</code></td><td>4 (highest)</td><td>Full control — can delete org, assign owner role</td></tr>
+        <tr><td><code>admin</code></td><td>3</td><td>Manage members, approve/reject join requests, invite users</td></tr>
+        <tr><td><code>editor</code></td><td>2</td><td>Create and edit content</td></tr>
+        <tr><td><code>viewer</code></td><td>1 (lowest)</td><td>Read-only access</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Apps &amp; Endpoints</h2>
+    <div class="app-grid">
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">Auth Core</span>
+          <span class="status-badge status-live">Live</span>
+        </div>
+        <p>User registration, JWT login/refresh/logout, password reset, email verification, account deletion. Custom JWT payload with org, role, and MFA claims.</p>
+        <div class="app-card-links">
+          <a href="auth_core/v1.html" class="version-link v1">v1 — 9 endpoints</a>
+          <a href="auth_core/v2.html" class="version-link v2">v2 — 8 endpoints</a>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">Organizations</span>
+          <span class="status-badge status-live">Live</span>
+        </div>
+        <p>Multi-tenant org management — create/list/detail, member management, email invitations, join requests with approval flow, org stats dashboard.</p>
+        <div class="app-card-links">
+          <a href="organizations/v1.html" class="version-link v1">v1 — 14 endpoints</a>
+          <a href="organizations/v2.html" class="version-link v2">v2 — 15 endpoints</a>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">Social Accounts</span>
+          <span class="status-badge status-stub">Stub</span>
+        </div>
+        <p>OAuth connections for Facebook, Instagram, Twitter/X, and LinkedIn. Token encryption, auto-refresh. Planned: v1 endpoints for connect/disconnect/list.</p>
+        <div class="app-card-links">
+          <a href="social_accounts/index.html" class="version-link disabled">v1 — coming soon</a>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">Content</span>
+          <span class="status-badge status-stub">Stub</span>
+        </div>
+        <p>Posts, media uploads, approval workflows. Supports multi-platform content targeting, rich media attachments, and editor/approval state machine.</p>
+        <div class="app-card-links">
+          <a href="content/index.html" class="version-link disabled">v1 — coming soon</a>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">Scheduler</span>
+          <span class="status-badge status-stub">Stub</span>
+        </div>
+        <p>Recurring post schedules using cron-based rules. Queue: <code>scheduler</code> (priority 8). Publishes to <code>socialos.posts.scheduled</code> Kafka topic.</p>
+        <div class="app-card-links">
+          <a href="scheduler/index.html" class="version-link disabled">v1 — coming soon</a>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">Publisher</span>
+          <span class="status-badge status-stub">Stub</span>
+        </div>
+        <p>Publishes posts to social platforms with retry logic. Highest priority Celery queue (<code>publish</code>, priority 10). Internal only — no public REST API.</p>
+        <div class="app-card-links">
+          <a href="publisher/index.html" class="version-link disabled">Internal only</a>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">Analytics</span>
+          <span class="status-badge status-stub">Stub</span>
+        </div>
+        <p>Metrics collection and aggregation via ClickHouse bridge. Consumes <code>socialos.posts.published</code> topic. Planned: reach, engagement, follower growth APIs.</p>
+        <div class="app-card-links">
+          <a href="analytics/index.html" class="version-link disabled">v1 — coming soon</a>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">Inbox</span>
+          <span class="status-badge status-stub">Stub</span>
+        </div>
+        <p>Unified inbox for DMs, comments, and mentions across all connected platforms. Consumes <code>socialos.inbox.messages</code> Kafka topic.</p>
+        <div class="app-card-links">
+          <a href="inbox/index.html" class="version-link disabled">v1 — coming soon</a>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">AI Engine</span>
+          <span class="status-badge status-stub">Stub</span>
+        </div>
+        <p>AI caption and hashtag generation via OpenAI and Anthropic. Celery queue: <code>ai</code> (priority 6, prefork pool). Planned: caption, hashtag, tone rewrite endpoints.</p>
+        <div class="app-card-links">
+          <a href="ai_engine/index.html" class="version-link disabled">v1 — coming soon</a>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">Notifications</span>
+          <span class="status-badge status-stub">Stub</span>
+        </div>
+        <p>In-app notifications with WebSocket push via Django Channels. Channel groups named <code>org_&lt;org_id&gt;</code>. Internal only — no public REST API.</p>
+        <div class="app-card-links">
+          <a href="notifications/index.html" class="version-link disabled">Internal only</a>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">Automation</span>
+          <span class="status-badge status-stub">Stub</span>
+        </div>
+        <p>Rule-based automation triggers for content workflows. Planned: trigger/action rule CRUD, execution history, enable/disable toggle.</p>
+        <div class="app-card-links">
+          <a href="automation/index.html" class="version-link disabled">v1 — coming soon</a>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">
+          <span class="app-card-title">Audit</span>
+          <span class="status-badge status-stub">Stub</span>
+        </div>
+        <p>Request audit log and compliance records. AuditMiddleware logs all requests. Consumes <code>socialos.oauth.token_refreshed</code> topic. Internal only.</p>
+        <div class="app-card-links">
+          <a href="audit/index.html" class="version-link disabled">Internal only</a>
+        </div>
+      </div>
+    </div>
+
+    <h2>Event Bus (Kafka Topics)</h2>
+    <table>
+      <thead><tr><th>Topic</th><th>Producers</th><th>Consumers</th><th>Partition Key</th></tr></thead>
+      <tbody>
+        <tr><td><code>socialos.posts.published</code></td><td>publisher</td><td>analytics, notifications</td><td><code>org_id</code></td></tr>
+        <tr><td><code>socialos.posts.scheduled</code></td><td>scheduler</td><td>scheduler consumer</td><td><code>org_id</code></td></tr>
+        <tr><td><code>socialos.inbox.messages</code></td><td>inbox</td><td>inbox, notifications</td><td><code>org_id</code></td></tr>
+        <tr><td><code>socialos.analytics.collected</code></td><td>analytics</td><td>analytics aggregator</td><td><code>org_id</code></td></tr>
+        <tr><td><code>socialos.oauth.token_refreshed</code></td><td>social_accounts</td><td>audit</td><td><code>org_id</code></td></tr>
+      </tbody>
+    </table>
+  </main>
+</div>
+</body>
+</html>
